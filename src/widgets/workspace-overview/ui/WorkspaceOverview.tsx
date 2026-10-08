@@ -1,18 +1,27 @@
-import { Button } from '@/shared/ui/Button/Button'
-import { Icon } from '@/shared/ui/Icon/Icon'
-import type { PreparationBanner, WorkspaceStat } from '@/entities/workspace/model/types'
+import { Button } from "@/shared/ui/Button/Button";
+import { Icon } from "@/shared/ui/Icon/Icon";
+import type {
+  PreparationBanner,
+  WorkspaceStat,
+} from "@/entities/workspace/model/types";
 
-import './WorkspaceOverview.css'
+import "./WorkspaceOverview.css";
 
 interface WorkspaceOverviewProps {
-  title: string
-  description: string
-  primaryActionLabel: string
-  preparation: PreparationBanner
-  stats: WorkspaceStat[]
+  title: string;
+  description: string;
+  primaryActionLabel: string;
+  preparation: PreparationBanner;
+  stats: WorkspaceStat[];
 }
 
-export function WorkspaceOverview({ title, description, primaryActionLabel, preparation, stats }: WorkspaceOverviewProps) {
+export function WorkspaceOverview({
+  title,
+  description,
+  primaryActionLabel,
+  preparation,
+  stats,
+}: WorkspaceOverviewProps) {
   return (
     <>
       <section className="workspace-page-header">
@@ -51,5 +60,5 @@ export function WorkspaceOverview({ title, description, primaryActionLabel, prep
         ))}
       </section>
     </>
-  )
+  );
 }

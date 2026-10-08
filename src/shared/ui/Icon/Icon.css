@@ -3,6 +3,6 @@
   color: var(--color-icon-default);
 }
 
-.icon[data-tone='accent'] {
+.icon[data-tone="accent"] {
   color: var(--color-icon-accent);
 }

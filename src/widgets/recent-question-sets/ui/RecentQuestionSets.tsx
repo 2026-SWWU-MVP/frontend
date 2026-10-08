@@ -1,17 +1,17 @@
-import { Badge, type BadgeTone } from '@/shared/ui/Badge/Badge'
-import { Button } from '@/shared/ui/Button/Button'
-import type { RecentQuestionSet } from '@/entities/workspace/model/types'
+import { Badge, type BadgeTone } from "@/shared/ui/Badge/Badge";
+import { Button } from "@/shared/ui/Button/Button";
+import type { RecentQuestionSet } from "@/entities/workspace/model/types";
 
-import './RecentQuestionSets.css'
+import "./RecentQuestionSets.css";
 
 interface RecentQuestionSetsProps {
-  items: RecentQuestionSet[]
+  items: RecentQuestionSet[];
 }
 
-function getStatusTone(status: RecentQuestionSet['status']): BadgeTone {
-  if (status === 'review') return 'review'
-  if (status === 'complete') return 'success'
-  return 'neutral'
+function getStatusTone(status: RecentQuestionSet["status"]): BadgeTone {
+  if (status === "review") return "review";
+  if (status === "complete") return "success";
+  return "neutral";
 }
 
 export function RecentQuestionSets({ items }: RecentQuestionSetsProps) {
@@ -38,7 +38,9 @@ export function RecentQuestionSets({ items }: RecentQuestionSetsProps) {
           </article>
         ))}
       </div>
-      <p className="workspace-panel__caption">학교평과 모든 자료는 화면 설명을 위한 가상 예시입니다.</p>
+      <p className="workspace-panel__caption">
+        학교평과 모든 자료는 화면 설명을 위한 가상 예시입니다.
+      </p>
     </section>
-  )
+  );
 }

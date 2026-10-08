@@ -1,7 +1,7 @@
-import type { PropsWithChildren } from 'react'
+import type { PropsWithChildren } from "react";
 
-import './PageContainer.css'
+import "./PageContainer.css";
 
 export function PageContainer({ children }: PropsWithChildren) {
-  return <div className="page-container">{children}</div>
+  return <div className="page-container">{children}</div>;
 }
