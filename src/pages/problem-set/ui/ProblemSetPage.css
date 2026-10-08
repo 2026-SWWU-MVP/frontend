@@ -1,0 +1,196 @@
+.problem-set-page {
+  max-width: 812px;
+  margin: 0 auto;
+}
+
+.problem-set-page__intro {
+  margin-bottom: var(--spacing-28);
+}
+
+.problem-set-page__intro h1 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-28);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-140);
+}
+
+.problem-set-page__intro p {
+  margin: var(--spacing-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+}
+
+.problem-set-card {
+  padding: var(--spacing-32);
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-12);
+  background: var(--color-surface-default);
+}
+
+.problem-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-16);
+  padding-bottom: var(--spacing-24);
+  border-bottom: var(--stroke-width-1) solid var(--color-border-default);
+}
+
+.problem-header h1 {
+  margin: var(--spacing-12) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.problem-header__number {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+  white-space: nowrap;
+}
+
+.problem-progress {
+  padding: var(--spacing-20) 0;
+}
+
+.problem-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-12);
+  line-height: var(--line-height-165);
+}
+
+.problem-progress__meta strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.problem-progress__track {
+  height: 7px;
+  margin-top: var(--spacing-8);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-neutral);
+}
+
+.problem-progress__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-action-primary);
+  transition: width 180ms ease;
+}
+
+.problem-view {
+  padding: var(--spacing-28) 0;
+}
+
+.problem-view__label {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.problem-view__prompt {
+  margin: var(--spacing-12) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.answer-area {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.answer-area legend {
+  margin-bottom: var(--spacing-12);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-12);
+  line-height: var(--line-height-165);
+}
+
+.answer-area__choices {
+  display: grid;
+  gap: var(--spacing-8);
+}
+
+.answer-choice {
+  display: grid;
+  grid-template-columns: 18px 24px minmax(0, 1fr);
+  gap: var(--spacing-12);
+  align-items: center;
+  min-height: 54px;
+  padding: 0 var(--spacing-16);
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-8);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+}
+
+.answer-choice input {
+  accent-color: var(--color-action-primary);
+}
+
+.answer-choice.is-selected {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+
+.answer-choice__label {
+  color: var(--color-action-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.problem-set-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-28);
+  padding-top: var(--spacing-20);
+  border-top: var(--stroke-width-1) solid var(--color-border-default);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.problem-result {
+  padding: var(--spacing-40);
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-12);
+  background: var(--color-surface-default);
+  text-align: center;
+}
+
+.problem-result__eyebrow {
+  color: var(--color-action-primary);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-bold);
+}
+
+.problem-result h1 {
+  margin: var(--spacing-12) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-22);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.problem-result p {
+  margin: var(--spacing-8) 0 var(--spacing-24);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+}
