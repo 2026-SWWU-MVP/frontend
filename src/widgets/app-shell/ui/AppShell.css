@@ -1,0 +1,56 @@
+.app-shell {
+  min-height: 100vh;
+  background: var(--color-surface-canvas);
+}
+
+.app-shell__workspace {
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: 224px;
+}
+
+.app-shell__main {
+  min-height: calc(100vh - 72px);
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 72px;
+  }
+
+  .sidebar__content,
+  .sidebar__footer {
+    padding-right: var(--spacing-12);
+    padding-left: var(--spacing-12);
+  }
+
+  .sidebar__brand strong,
+  .sidebar__workspace-copy,
+  .sidebar__navigation-item span,
+  .sidebar__navigation-item small,
+  .sidebar__demo,
+  .sidebar__user .sidebar__workspace-copy,
+  .sidebar__workspace > .icon,
+  .sidebar__user > .icon {
+    display: none;
+  }
+
+  .sidebar__brand,
+  .sidebar__workspace,
+  .sidebar__user,
+  .sidebar__navigation-item {
+    justify-content: center;
+  }
+
+  .sidebar__workspace {
+    padding: var(--spacing-12) 0;
+  }
+
+  .sidebar__navigation-item {
+    padding: 0;
+  }
+
+  .app-shell__workspace {
+    margin-left: 72px;
+  }
+}

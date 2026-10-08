@@ -1,0 +1,25 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-10);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-10);
+  white-space: nowrap;
+}
+
+.breadcrumbs a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadcrumbs__item:last-child {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
