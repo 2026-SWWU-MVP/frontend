@@ -1,11 +1,11 @@
-import { Button } from '@/shared/ui/Button/Button'
-import { Icon } from '@/shared/ui/Icon/Icon'
-import type { WorkspaceResponse } from '@/entities/workspace/model/types'
+import { Button } from "@/shared/ui/Button/Button";
+import { Icon } from "@/shared/ui/Icon/Icon";
+import type { WorkspaceResponse } from "@/entities/workspace/model/types";
 
-import './ReviewPrompt.css'
+import "./ReviewPrompt.css";
 
 interface ReviewPromptProps {
-  prompt: WorkspaceResponse['reviewPrompt']
+  prompt: WorkspaceResponse["reviewPrompt"];
 }
 
 export function ReviewPrompt({ prompt }: ReviewPromptProps) {
@@ -16,5 +16,5 @@ export function ReviewPrompt({ prompt }: ReviewPromptProps) {
       <p>{prompt.description}</p>
       <Button variant="text">{prompt.actionLabel}</Button>
     </section>
-  )
+  );
 }

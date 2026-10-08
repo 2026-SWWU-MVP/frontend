@@ -1,16 +1,266 @@
-import { useEffect, useState } from 'react'
-import { reportsRepository } from '@/entities/reports/api/repository'
-import type { ReportData, ReportFilters } from '@/entities/reports/model/types'
-import { Button } from '@/shared/ui/Button/Button'
-import { Icon } from '@/shared/ui/Icon/Icon'
-import { PageContainer } from '@/shared/ui/PageContainer/PageContainer'
-import './ReportsPage.css'
+import { useEffect, useState } from "react";
+import { reportsRepository } from "@/entities/reports/api/repository";
+import type { ReportData, ReportFilters } from "@/entities/reports/model/types";
+import { Button } from "@/shared/ui/Button/Button";
+import { Icon } from "@/shared/ui/Icon/Icon";
+import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import "./ReportsPage.css";
 
-const initialFilters: ReportFilters = { period: '2026.10.01 ~ 2026.10.07', school: '전체 학교', subject: '전체 과목' }
-function Filter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) { return <label className="report-filter"><strong>{label}</strong><span><select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select><Icon name="chevron-down" size={14} /></span></label> }
-function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <section className="report-card metric-card"><span>{label}</span><strong>{value}</strong><small>{detail}</small></section> }
-function TrendChart({ items }: { items: ReportData['trend'] }) { const max = Math.max(...items.map((item) => item.created)); return <section className="report-card trend-chart-card"><div className="report-card-heading"><h2>문제 세트 제작·확정 추이</h2><span className="report-badge">데모 · 세트 수</span></div><div className="chart-legend"><span><i className="created" />제작</span><span><i className="approved" />확정</span></div><div className="bar-chart">{items.map((item) => <div className="bar-group" key={item.label}><div className="bars"><div className="bar created" style={{ height: `${(item.created / max) * 100}%` }}><b>{item.created}</b></div><div className="bar approved" style={{ height: `${(item.approved / max) * 100}%` }}><b>{item.approved}</b></div></div><small>{item.label}</small></div>)}</div><p className="chart-note">생성 시점 기준 집계 · 확정은 동일 기간 제작 세트 중 확정된 수</p></section> }
-function SubjectCard({ subjects }: { subjects: ReportData['subjects'] }) { return <section className="report-card subject-card"><div className="report-card-heading"><h2>과목별 생성 문항</h2><span className="report-badge">데모 · 156문항</span></div><div className="subject-list">{subjects.map((item) => <div className="subject-item" key={item.name}><div><span>{item.name}</span><strong>{item.questions}문항 · {item.percentage}%</strong></div><div className="subject-progress"><i style={{ width: `${item.percentage}%` }} /></div></div>)}</div><div className="usage"><small>자료 활용 현황</small><span>활용률 75%</span><strong>12건 중 9건 활용</strong><p>활용은 생성 자료 또는 유형 참고로 선택된 이력을 뜻합니다.</p></div></section> }
-function SchoolTable({ schools }: { schools: ReportData['schools'] }) { return <section className="report-card school-table-card"><div className="report-card-heading"><h2>학교별 준비 현황</h2><span className="report-badge">데모</span></div><div className="school-table"><div className="table-head"><span>학교</span><span>세트</span><span>문항</span><span>확정</span></div>{schools.map((item) => <div className="table-row" key={item.name}><strong>{item.name}</strong><span>{item.sets}개</span><span>{item.questions}문항</span><em>{item.approved}개</em></div>)}</div><p className="table-note">같은 학교의 여러 과목과 시험 세트를 합산합니다.</p></section> }
-function InsightCard({ items }: { items: ReportData['insight'] }) { return <section className="insight-card"><div className="report-card-heading"><h2>다음 준비를 위한 제안</h2><span className="insight-badge">데모 인사이트</span></div>{items.map((item) => <div className="insight-item" key={item.number}><strong>{item.number} {item.title}</strong><p>{item.description}</p></div>)}</section> }
-export function ReportsPage() { const [filters, setFilters] = useState(initialFilters); const [data, setData] = useState<ReportData | null>(null); useEffect(() => { reportsRepository.execute(filters).then(setData) }, [filters]); const update = (key: keyof ReportFilters, value: string) => setFilters((current) => ({ ...current, [key]: value })); if (!data) return <PageContainer><p>리포트를 불러오는 중입니다.</p></PageContainer>; return <PageContainer><div className="reports-page"><div className="reports-heading"><div><h1>준비 과정을 숫자로, 다음 행동은 명확하게</h1><p>제작·검토 현황과 시험 자료의 구성을 한눈에 확인하세요.</p></div><Button variant="secondary"><Icon name="files" size={16} />리포트 내보내기</Button></div><div className="reports-filters"><Filter label="분석 기간" value={filters.period} options={data.filters.periods} onChange={(value) => update('period', value)} /><Filter label="학교" value={filters.school} options={data.filters.schools} onChange={(value) => update('school', value)} /><Filter label="과목" value={filters.subject} options={data.filters.subjects} onChange={(value) => update('subject', value)} /><small>갱신: {data.updatedAt} · 데모 워크스페이스</small></div><div className="reports-notice"><Icon name="search" size={16} tone="accent" />모든 수치와 차트는 가상 데모 데이터입니다. 운영 지표이며 학생 성적 향상이나 학원 등록 증가를 의미하지 않습니다.</div><div className="metrics-grid"><MetricCard label="제작된 문제 세트" value={data.metrics.sets} detail={data.metrics.setsDetail} /><MetricCard label="생성 문항" value={data.metrics.questions} detail={data.metrics.questionsDetail} /><MetricCard label="확정 비율" value={data.metrics.approval} detail={data.metrics.approvalDetail} /><MetricCard label="참고 시험 자료" value={data.metrics.sources} detail={data.metrics.sourcesDetail} /></div><div className="reports-grid"><TrendChart items={data.trend} /><SubjectCard subjects={data.subjects} /><SchoolTable schools={data.schools} /><InsightCard items={data.insight} /></div></div></PageContainer> }
+const initialFilters: ReportFilters = {
+  period: "2026.10.01 ~ 2026.10.07",
+  school: "전체 학교",
+  subject: "전체 과목",
+};
+function Filter({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="report-filter">
+      <strong>{label}</strong>
+      <span>
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+        <Icon name="chevron-down" size={14} />
+      </span>
+    </label>
+  );
+}
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <section className="report-card metric-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </section>
+  );
+}
+function TrendChart({ items }: { items: ReportData["trend"] }) {
+  const max = Math.max(...items.map((item) => item.created));
+  return (
+    <section className="report-card trend-chart-card">
+      <div className="report-card-heading">
+        <h2>문제 세트 제작·확정 추이</h2>
+        <span className="report-badge">데모 · 세트 수</span>
+      </div>
+      <div className="chart-legend">
+        <span>
+          <i className="created" />
+          제작
+        </span>
+        <span>
+          <i className="approved" />
+          확정
+        </span>
+      </div>
+      <div className="bar-chart">
+        {items.map((item) => (
+          <div className="bar-group" key={item.label}>
+            <div className="bars">
+              <div
+                className="bar created"
+                style={{ height: `${(item.created / max) * 100}%` }}
+              >
+                <b>{item.created}</b>
+              </div>
+              <div
+                className="bar approved"
+                style={{ height: `${(item.approved / max) * 100}%` }}
+              >
+                <b>{item.approved}</b>
+              </div>
+            </div>
+            <small>{item.label}</small>
+          </div>
+        ))}
+      </div>
+      <p className="chart-note">
+        생성 시점 기준 집계 · 확정은 동일 기간 제작 세트 중 확정된 수
+      </p>
+    </section>
+  );
+}
+function SubjectCard({ subjects }: { subjects: ReportData["subjects"] }) {
+  return (
+    <section className="report-card subject-card">
+      <div className="report-card-heading">
+        <h2>과목별 생성 문항</h2>
+        <span className="report-badge">데모 · 156문항</span>
+      </div>
+      <div className="subject-list">
+        {subjects.map((item) => (
+          <div className="subject-item" key={item.name}>
+            <div>
+              <span>{item.name}</span>
+              <strong>
+                {item.questions}문항 · {item.percentage}%
+              </strong>
+            </div>
+            <div className="subject-progress">
+              <i style={{ width: `${item.percentage}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="usage">
+        <small>자료 활용 현황</small>
+        <span>활용률 75%</span>
+        <strong>12건 중 9건 활용</strong>
+        <p>활용은 생성 자료 또는 유형 참고로 선택된 이력을 뜻합니다.</p>
+      </div>
+    </section>
+  );
+}
+function SchoolTable({ schools }: { schools: ReportData["schools"] }) {
+  return (
+    <section className="report-card school-table-card">
+      <div className="report-card-heading">
+        <h2>학교별 준비 현황</h2>
+        <span className="report-badge">데모</span>
+      </div>
+      <div className="school-table">
+        <div className="table-head">
+          <span>학교</span>
+          <span>세트</span>
+          <span>문항</span>
+          <span>확정</span>
+        </div>
+        {schools.map((item) => (
+          <div className="table-row" key={item.name}>
+            <strong>{item.name}</strong>
+            <span>{item.sets}개</span>
+            <span>{item.questions}문항</span>
+            <em>{item.approved}개</em>
+          </div>
+        ))}
+      </div>
+      <p className="table-note">
+        같은 학교의 여러 과목과 시험 세트를 합산합니다.
+      </p>
+    </section>
+  );
+}
+function InsightCard({ items }: { items: ReportData["insight"] }) {
+  return (
+    <section className="insight-card">
+      <div className="report-card-heading">
+        <h2>다음 준비를 위한 제안</h2>
+        <span className="insight-badge">데모 인사이트</span>
+      </div>
+      {items.map((item) => (
+        <div className="insight-item" key={item.number}>
+          <strong>
+            {item.number} {item.title}
+          </strong>
+          <p>{item.description}</p>
+        </div>
+      ))}
+    </section>
+  );
+}
+export function ReportsPage() {
+  const [filters, setFilters] = useState(initialFilters);
+  const [data, setData] = useState<ReportData | null>(null);
+  useEffect(() => {
+    reportsRepository.execute(filters).then(setData);
+  }, [filters]);
+  const update = (key: keyof ReportFilters, value: string) =>
+    setFilters((current) => ({ ...current, [key]: value }));
+  if (!data)
+    return (
+      <PageContainer>
+        <p>리포트를 불러오는 중입니다.</p>
+      </PageContainer>
+    );
+  return (
+    <PageContainer>
+      <div className="reports-page">
+        <div className="reports-heading">
+          <div>
+            <h1>준비 과정을 숫자로, 다음 행동은 명확하게</h1>
+            <p>제작·검토 현황과 시험 자료의 구성을 한눈에 확인하세요.</p>
+          </div>
+          <Button variant="secondary">
+            <Icon name="files" size={16} />
+            리포트 내보내기
+          </Button>
+        </div>
+        <div className="reports-filters">
+          <Filter
+            label="분석 기간"
+            value={filters.period}
+            options={data.filters.periods}
+            onChange={(value) => update("period", value)}
+          />
+          <Filter
+            label="학교"
+            value={filters.school}
+            options={data.filters.schools}
+            onChange={(value) => update("school", value)}
+          />
+          <Filter
+            label="과목"
+            value={filters.subject}
+            options={data.filters.subjects}
+            onChange={(value) => update("subject", value)}
+          />
+          <small>갱신: {data.updatedAt} · 데모 워크스페이스</small>
+        </div>
+        <div className="reports-notice">
+          <Icon name="search" size={16} tone="accent" />
+          모든 수치와 차트는 가상 데모 데이터입니다. 운영 지표이며 학생 성적
+          향상이나 학원 등록 증가를 의미하지 않습니다.
+        </div>
+        <div className="metrics-grid">
+          <MetricCard
+            label="제작된 문제 세트"
+            value={data.metrics.sets}
+            detail={data.metrics.setsDetail}
+          />
+          <MetricCard
+            label="생성 문항"
+            value={data.metrics.questions}
+            detail={data.metrics.questionsDetail}
+          />
+          <MetricCard
+            label="확정 비율"
+            value={data.metrics.approval}
+            detail={data.metrics.approvalDetail}
+          />
+          <MetricCard
+            label="참고 시험 자료"
+            value={data.metrics.sources}
+            detail={data.metrics.sourcesDetail}
+          />
+        </div>
+        <div className="reports-grid">
+          <TrendChart items={data.trend} />
+          <SubjectCard subjects={data.subjects} />
+          <SchoolTable schools={data.schools} />
+          <InsightCard items={data.insight} />
+        </div>
+      </div>
+    </PageContainer>
+  );
+}

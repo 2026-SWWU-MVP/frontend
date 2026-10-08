@@ -1,14 +1,14 @@
-import { Icon } from '@/shared/ui/Icon/Icon'
+import { Icon } from "@/shared/ui/Icon/Icon";
 
-import './Breadcrumbs.css'
+import "./Breadcrumbs.css";
 
 export interface BreadcrumbItem {
-  label: string
-  href?: string
+  label: string;
+  href?: string;
 }
 
 interface BreadcrumbsProps {
-  items: BreadcrumbItem[]
+  items: BreadcrumbItem[];
 }
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
@@ -16,10 +16,14 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
     <nav aria-label="Breadcrumb" className="breadcrumbs">
       {items.map((item, index) => (
         <span className="breadcrumbs__item" key={item.label}>
-          {item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}
+          {item.href ? (
+            <a href={item.href}>{item.label}</a>
+          ) : (
+            <span>{item.label}</span>
+          )}
           {index < items.length - 1 && <Icon name="chevron-right" size={12} />}
         </span>
       ))}
     </nav>
-  )
+  );
 }

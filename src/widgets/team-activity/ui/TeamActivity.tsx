@@ -1,12 +1,12 @@
-import { Badge } from '@/shared/ui/Badge/Badge'
-import { Button } from '@/shared/ui/Button/Button'
-import { Icon } from '@/shared/ui/Icon/Icon'
-import type { TeamActivity as TeamActivityItem } from '@/entities/workspace/model/types'
+import { Badge } from "@/shared/ui/Badge/Badge";
+import { Button } from "@/shared/ui/Button/Button";
+import { Icon } from "@/shared/ui/Icon/Icon";
+import type { TeamActivity as TeamActivityItem } from "@/entities/workspace/model/types";
 
-import './TeamActivity.css'
+import "./TeamActivity.css";
 
 interface TeamActivityProps {
-  items: TeamActivityItem[]
+  items: TeamActivityItem[];
 }
 
 export function TeamActivity({ items }: TeamActivityProps) {
@@ -18,7 +18,10 @@ export function TeamActivity({ items }: TeamActivityProps) {
       </header>
       <div className="team-activity__list">
         {items.map((item) => (
-          <article className="team-activity__item" key={`${item.memberName}-${item.time}`}>
+          <article
+            className="team-activity__item"
+            key={`${item.memberName}-${item.time}`}
+          >
             <span className="team-activity__avatar">{item.initials}</span>
             <div>
               <strong>{item.memberName}</strong>
@@ -35,5 +38,5 @@ export function TeamActivity({ items }: TeamActivityProps) {
         </Button>
       </div>
     </section>
-  )
+  );
 }
