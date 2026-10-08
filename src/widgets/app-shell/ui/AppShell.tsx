@@ -1,9 +1,9 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet } from "react-router-dom";
 
-import { Header } from '@/widgets/header/ui/Header'
-import { Sidebar } from '@/widgets/sidebar/ui/Sidebar'
+import { Header } from "@/widgets/header/ui/Header";
+import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
 
-import './AppShell.css'
+import "./AppShell.css";
 
 export function AppShell() {
   return (
@@ -16,5 +16,5 @@ export function AppShell() {
         </main>
       </div>
     </div>
-  )
+  );
 }
