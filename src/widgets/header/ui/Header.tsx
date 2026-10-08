@@ -5,7 +5,7 @@ export function Header() {
   return (
     <header className="app-header">
       <Breadcrumbs
-        items={[{ label: "봄빛학원" }, { label: "학교·시험 경향" }]}
+        items={[{ label: "솔샘학원" }, { label: "학교·시험 경향" }]}
       />
       <div className="app-header__actions">
         <span className="app-header__badge">데모 데이터</span>

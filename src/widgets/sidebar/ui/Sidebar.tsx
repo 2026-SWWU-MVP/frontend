@@ -2,12 +2,14 @@ import { NavLink } from "react-router-dom";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import type { IconName } from "@/shared/ui/Icon/iconTypes";
 import "./Sidebar.css";
+
 interface NavigationItem {
   icon: IconName;
   label: string;
   path: string;
   count?: string;
 }
+
 const primaryNavigation: NavigationItem[] = [
   { icon: "layout-dashboard", label: "워크스페이스", path: "/workspace" },
   { icon: "files", label: "문제 세트", path: "/problem-sets", count: "24" },
@@ -15,10 +17,14 @@ const primaryNavigation: NavigationItem[] = [
   { icon: "chart-no-axes-combined", label: "데이터 리포트", path: "/reports" },
   { icon: "clipboard-check", label: "시험 후 리뷰", path: "/reviews" },
 ];
+
 const secondaryNavigation: NavigationItem[] = [
   { icon: "users", label: "팀원 및 권한", path: "/members" },
   { icon: "settings", label: "워크스페이스 설정", path: "/settings" },
 ];
+
+const workspaceName = "솔샘학원";
+
 function NavigationItemView({ item }: { item: NavigationItem }) {
   return (
     <NavLink
@@ -42,6 +48,7 @@ function NavigationItemView({ item }: { item: NavigationItem }) {
     </NavLink>
   );
 }
+
 export function Sidebar() {
   return (
     <aside className="sidebar">
@@ -50,22 +57,28 @@ export function Sidebar() {
           <span className="sidebar__brand-icon">
             <Icon name="book-open" size={20} tone="accent" />
           </span>
-          <strong>문항결</strong>
+          <strong>테스트핏</strong>
         </a>
+
         <button className="sidebar__workspace" type="button">
-          <span className="sidebar__avatar">봄</span>
+          <span className="sidebar__avatar">{workspaceName.charAt(0)}</span>
+
           <span className="sidebar__workspace-copy">
-            <strong>봄빛학원</strong>
+            <strong>{workspaceName}</strong>
             <small>본원 · 팀 4명</small>
           </span>
+
           <Icon name="chevrons-up-down" size={14} />
         </button>
+
         <nav aria-label="주요 메뉴" className="sidebar__navigation">
           {primaryNavigation.map((item) => (
             <NavigationItemView item={item} key={item.label} />
           ))}
         </nav>
+
         <div className="sidebar__divider" />
+
         <nav
           aria-label="워크스페이스 메뉴"
           className="sidebar__secondary-navigation"
@@ -75,11 +88,8 @@ export function Sidebar() {
           ))}
         </nav>
       </div>
+
       <div className="sidebar__footer">
-        <div className="sidebar__demo">
-          <strong>데모 워크스페이스</strong>
-          <p>학교·자료·통계는 예시입니다. 실제 운영 결과가 아닙니다.</p>
-        </div>
         <button className="sidebar__user" type="button">
           <span className="sidebar__user-avatar">서</span>
           <span className="sidebar__workspace-copy">
