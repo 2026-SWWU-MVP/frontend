@@ -1,51 +1,12 @@
 import type { ProblemSetResponse } from '@/entities/problem-set/model/types'
 
 export const problemSetMockResponse: ProblemSetResponse = {
-  id: 'demo-problem-set',
-  title: '한빛고 2학년 · 공공재와 시장 실패',
-  description: '자료를 탐색하고 AI가 생성한 문항을 검토해 보세요.',
+  id: 'demo-problem-set', title: '공공재와 시장 실패', description: '자료를 바탕으로 AI가 생성한 문항을 검토하고 확정하세요.', school: '한빛고등학교', grade: '2학년', subject: '국어', area: '독서', exam: '2026년 1학기 중간고사', scope: '사회·경제 지문 / 공공재',
+  passage: '공공재는 한 사람이 소비하더라도 다른 사람의 소비 가능성이 줄어들지 않는 비경합성과, 대가를 지불하지 않은 사람을 소비에서 배제하기 어려운 비배제성을 지닌다. 가로등이 비추는 빛은 이러한 성격을 잘 보여 준다. 가로등 아래를 지나는 사람이 늘어나도 다른 사람이 누리는 빛은 줄어들지 않으며, 비용을 내지 않았다는 이유로 특정 사람에게만 빛을 제공하기도 어렵다.\n\n이 때문에 공공재를 시장에만 맡기면 무임승차 문제가 발생할 수 있다. 사람들은 다른 사람이 비용을 부담하기를 기대하며 자신의 지불 의사를 낮게 드러낸다. 그 결과 사회적으로 필요한 양보다 적은 공공재가 공급될 수 있다. 정부는 세금을 통해 비용을 부담하고 공공재를 공급함으로써 이 문제를 보완한다.',
+  prompt: '공공재는 한 사람이 소비하더라도 다른 사람의 소비 가능성이 줄어들지 않는 비경합성과, 대가를 지불하지 않은 사람을 소비에서 배제하기 어려운 비배제성을 지닌다. 가로등이 비추는 빛은 이러한 성격을 잘 보여 준다. 가로등 아래를 지나는 사람이 늘어나도 다른 사람이 누리는 빛은 줄어들지 않으며, 비용을 내지 않았다는 이유로 특정 사람에게만 빛을 제공하기도 어렵다.',
+  files: [{ id: 'pdf', name: '한빛고_2학년_국어_1학기중간.pdf', meta: '기출 시험지 · 6쪽 · 2.4MB · 김서현 업로드' }, { id: 'hwp', name: '봄빛학원_독서_공공재.hwp', meta: '학원 보유 자료 · 2쪽 · 420KB · 김서현 업로드' }],
   questions: [
-    {
-      id: 'question-1',
-      number: 1,
-      stage: 'source',
-      stageLabel: '자료 탐색',
-      title: '자료에서 핵심 내용을 찾아보세요',
-      prompt: '공공재의 특징으로 가장 적절한 설명을 선택하세요.',
-      choices: [
-        { id: 'choice-1-a', label: 'A', text: '한 사람이 소비하면 다른 사람은 소비할 수 없다.' },
-        { id: 'choice-1-b', label: 'B', text: '대가를 지불하지 않은 사람의 소비를 막기 어렵다.' },
-        { id: 'choice-1-c', label: 'C', text: '시장 가격이 항상 효율적인 자원 배분을 보장한다.' },
-        { id: 'choice-1-d', label: 'D', text: '소비자가 늘어날수록 사회적 편익이 줄어든다.' },
-      ],
-    },
-    {
-      id: 'question-2',
-      number: 2,
-      stage: 'generation',
-      stageLabel: 'AI 생성',
-      title: '생성된 문항을 확인하세요',
-      prompt: '다음 사례가 설명하는 시장 실패의 원인으로 가장 적절한 것은 무엇인가요?',
-      choices: [
-        { id: 'choice-2-a', label: 'A', text: '정보의 비대칭' },
-        { id: 'choice-2-b', label: 'B', text: '공공재의 과소 공급' },
-        { id: 'choice-2-c', label: 'C', text: '외부 효과의 발생' },
-        { id: 'choice-2-d', label: 'D', text: '독점 경쟁의 심화' },
-      ],
-    },
-    {
-      id: 'question-3',
-      number: 3,
-      stage: 'review',
-      stageLabel: '공통 검토',
-      title: '수업에 사용할 문항을 검토하세요',
-      prompt: '문항의 내용과 선택지가 학습 목표에 맞는지 확인한 뒤 답을 선택하세요.',
-      choices: [
-        { id: 'choice-3-a', label: 'A', text: '학습 목표와 문항의 요구가 일치한다.' },
-        { id: 'choice-3-b', label: 'B', text: '선택지 간 난이도 차이가 지나치게 크다.' },
-        { id: 'choice-3-c', label: 'C', text: '자료의 핵심 개념이 문항에 반영되지 않았다.' },
-        { id: 'choice-3-d', label: 'D', text: '정답을 확인할 수 있는 단서가 부족하다.' },
-      ],
-    },
+    { id: 'question-1', number: 1, stage: 'review', stageLabel: '내용 일치', title: '윗글의 내용과 일치하는 것은?', prompt: '윗글의 내용과 일치하는 것은?', choices: [{ id: 'choice-1-a', label: '①', text: '공공재는 소비자가 늘어날수록 소비 가능성이 줄어든다.' }, { id: 'choice-1-b', label: '②', text: '무임승차는 공공재가 필요한 양보다 적게 공급되는 원인이 될 수 있다.' }, { id: 'choice-1-c', label: '③', text: '대가를 지불하지 않은 사람은 공공재의 소비에서 쉽게 배제된다.' }, { id: 'choice-1-d', label: '④', text: '시장이 맡기면 공공재는 언제나 충분하게 공급된다.' }, { id: 'choice-1-e', label: '⑤', text: '정부가 공급하는 공공재는 편익과 비용을 검토할 필요가 없다.' }] },
+    { id: 'question-2', number: 2, stage: 'review', stageLabel: '사례 적용', title: '윗글을 바탕으로 <보기>를 이해한 내용으로 가장 적절한 것은?', prompt: '윗글을 바탕으로 <보기>를 이해한 내용으로 가장 적절한 것은?', choices: [{ id: 'choice-2-a', label: '①', text: '주민 수가 늘어나면 가로등 빛의 비경합성이 사라진다.' }, { id: 'choice-2-b', label: '②', text: '비용을 내지 않은 주민을 빛의 소비에서 배제하기 쉽다.' }, { id: 'choice-2-c', label: '③', text: '주민들이 기다리는 것은 가로등의 편익이 없기 때문이다.' }, { id: 'choice-2-d', label: '④', text: '자발적 비용 부담에만 의존하면 가로등이 충분히 설치되지 않을 수 있다.' }, { id: 'choice-2-e', label: '⑤', text: '세금으로 설치하면 편익과 비용을 따질 필요가 없다.' }] },
   ],
 }

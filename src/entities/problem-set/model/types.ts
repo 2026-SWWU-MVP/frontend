@@ -1,4 +1,4 @@
-export type ProblemSetStage = 'source' | 'generation' | 'review'
+export type ProblemSetStage = 'source' | 'generation' | 'review' | 'output'
 
 export interface ProblemChoice {
   id: string
@@ -21,4 +21,13 @@ export interface ProblemSetResponse {
   title: string
   description: string
   questions: ProblemQuestion[]
+  files: Array<{ id: string; name: string; meta: string }>
+  school: string
+  grade: string
+  subject: string
+  area: string
+  exam: string
+  scope: string
+  passage: string
+  prompt: string
 }
