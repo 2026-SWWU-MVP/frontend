@@ -1,0 +1,57 @@
+.team-activity__list {
+  display: grid;
+  gap: var(--spacing-20);
+  padding: var(--spacing-4) var(--spacing-24) var(--spacing-20);
+}
+
+.team-activity__item {
+  display: flex;
+  gap: var(--spacing-12);
+}
+
+.team-activity__avatar {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-neutral);
+  font-size: var(--font-size-10);
+  font-weight: var(--font-weight-bold);
+}
+
+.team-activity__item div {
+  min-width: 0;
+  flex: 1;
+}
+
+.team-activity__item strong,
+.team-activity__item p,
+.team-activity__item time {
+  display: block;
+  font-size: var(--font-size-12);
+  line-height: var(--line-height-165);
+}
+
+.team-activity__item strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.team-activity__item p,
+.team-activity__item time {
+  margin: var(--spacing-2) 0 0;
+  color: var(--color-text-secondary);
+}
+
+.team-activity__item time {
+  font-size: var(--font-size-10);
+}
+
+.team-activity__footer {
+  margin: 0 var(--spacing-24);
+  padding: var(--spacing-20) 0 var(--spacing-24);
+  border-top: var(--stroke-width-1) solid var(--color-border-default);
+}

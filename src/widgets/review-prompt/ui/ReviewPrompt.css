@@ -1,0 +1,22 @@
+.review-prompt {
+  min-height: 222px;
+  margin-top: var(--spacing-24);
+  padding: var(--spacing-24);
+  border-radius: var(--radius-12);
+  background: var(--color-surface-accent);
+}
+
+.review-prompt h2 {
+  margin: 0 0 var(--spacing-20);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.review-prompt p {
+  margin: var(--spacing-20) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-12);
+  line-height: var(--line-height-180);
+}

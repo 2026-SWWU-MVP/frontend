@@ -1,0 +1,96 @@
+.workspace-panel {
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-12);
+  background: var(--color-surface-default);
+}
+
+.workspace-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-16);
+  padding: var(--spacing-24) var(--spacing-24) var(--spacing-20);
+}
+
+.workspace-panel__header h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.recent-question-sets__columns,
+.recent-question-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 86px;
+  column-gap: var(--spacing-16);
+  align-items: center;
+  padding-right: var(--spacing-24);
+  padding-left: var(--spacing-24);
+}
+
+.recent-question-sets__columns {
+  padding-bottom: var(--spacing-12);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-11);
+  line-height: var(--line-height-165);
+}
+
+.recent-question-sets__columns span:nth-child(2),
+.recent-question-sets__columns span:nth-child(3) {
+  text-align: left;
+}
+
+.recent-question-sets__list {
+  margin: 0 var(--spacing-24);
+  border-top: var(--stroke-width-1) solid var(--color-border-default);
+}
+
+.recent-question-set {
+  min-height: 82px;
+  padding-top: var(--spacing-18);
+  padding-bottom: var(--spacing-18);
+  border-bottom: var(--stroke-width-1) solid var(--color-border-default);
+}
+
+.recent-question-set > div {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
+.recent-question-set strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-165);
+}
+
+.recent-question-set span,
+.recent-question-set time,
+.workspace-panel__caption {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-11);
+  line-height: var(--line-height-165);
+}
+
+.recent-question-set time {
+  white-space: nowrap;
+}
+
+.workspace-panel__caption {
+  margin: 0;
+  padding: var(--spacing-20) var(--spacing-24) var(--spacing-24);
+}
+
+@media (max-width: 620px) {
+  .recent-question-sets__columns,
+  .recent-question-set {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .recent-question-sets__columns span:nth-child(3),
+  .recent-question-set time {
+    display: none;
+  }
+}
