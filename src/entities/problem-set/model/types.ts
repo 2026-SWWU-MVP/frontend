@@ -14,10 +14,15 @@ export interface ProblemQuestion {
   title: string
   prompt: string
   choices: ProblemChoice[]
+  answerText?: string
+  explanation?: string
 }
 
 export interface ProblemSetResponse {
   id: string
+  materialId?: number
+  generationJobId?: number
+  worksheetId?: number
   title: string
   description: string
   questions: ProblemQuestion[]

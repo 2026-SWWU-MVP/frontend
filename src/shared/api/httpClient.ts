@@ -1,4 +1,5 @@
 import { appConfig } from '@/shared/config/env'
+import { getStoredUserId } from '@/shared/auth/session'
 
 import type { ApiClient, ApiRequest } from './types'
 
@@ -39,6 +40,13 @@ export class ApiNetworkError extends Error {
     super('네트워크 오류가 발생했습니다.')
     this.name = 'ApiNetworkError'
     this.cause = cause
+  }
+}
+
+export class MissingUserIdError extends Error {
+  constructor() {
+    super('인증된 사용자 ID가 없어 API 요청을 보낼 수 없습니다.')
+    this.name = 'MissingUserIdError'
   }
 }
 
@@ -98,6 +106,8 @@ export function createHttpClient(
   baseUrl = appConfig.apiBaseUrl,
   options: HttpClientOptions = {},
 ): ApiClient {
+  const userIdProvider = options.userIdProvider ?? getStoredUserId
+
   return {
     async request<TResponse>({ path, init, json, responseType, userId }: ApiRequest) {
       const headers = new Headers(init?.headers)
@@ -110,10 +120,12 @@ export function createHttpClient(
       }
 
       if (!isAuthPath(path)) {
-        const resolvedUserId = userId ?? options.userIdProvider?.()
-        if (resolvedUserId !== undefined && resolvedUserId !== null) {
-          headers.set('X-User-Id', String(resolvedUserId))
+        const resolvedUserId = userId ?? userIdProvider()
+        if (resolvedUserId === undefined || resolvedUserId === null) {
+          throw new MissingUserIdError()
         }
+
+        headers.set('X-User-Id', String(resolvedUserId))
       }
 
       let response: Response
