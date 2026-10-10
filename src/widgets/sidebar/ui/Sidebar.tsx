@@ -1,6 +1,9 @@
 import { NavLink } from "react-router-dom";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import type { IconName } from "@/shared/ui/Icon/iconTypes";
+import { getAuthSession } from "@/shared/auth/session";
+import { getAcademyPlanLabel, getStoredAcademy } from "@/shared/academy/academy";
+import { useAcademyState } from "@/shared/academy/state";
 import "./Sidebar.css";
 
 interface NavigationItem {
@@ -22,8 +25,6 @@ const secondaryNavigation: NavigationItem[] = [
   { icon: "users", label: "팀원 및 권한", path: "/members" },
   { icon: "settings", label: "워크스페이스 설정", path: "/settings" },
 ];
-
-const workspaceName = "솔샘학원";
 
 function NavigationItemView({ item }: { item: NavigationItem }) {
   return (
@@ -50,6 +51,14 @@ function NavigationItemView({ item }: { item: NavigationItem }) {
 }
 
 export function Sidebar() {
+  const session = getAuthSession();
+  const userId = session?.userId ?? null;
+  const academyState = useAcademyState(userId);
+  const academy = getStoredAcademy(userId ?? undefined);
+  const workspaceName = academy?.name ?? (academyState.status === "loading" ? "학원 정보 로딩 중" : "학원 정보 없음");
+  const userName = session?.name ?? "선생님 정보 없음";
+  const userRole = session?.role === "OWNER" ? "원장" : session?.role === "TEACHER" ? "선생님" : session?.role === "STUDENT" ? "학생" : "역할 정보 없음";
+
   return (
     <aside className="sidebar">
       <div className="sidebar__content">
@@ -65,10 +74,10 @@ export function Sidebar() {
 
           <span className="sidebar__workspace-copy">
             <strong>{workspaceName}</strong>
-            <small>본원 · 팀 4명</small>
+            <small>{academy ? `${academy.teacherCount ?? "-"} / ${academy.maxTeachers ?? "-"}명 · ${getAcademyPlanLabel(academy.plan)}` : "강사 수 정보 없음"}</small>
           </span>
 
-          <Icon name="chevrons-up-down" size={14} />
+          {/* <Icon name="chevrons-up-down" size={14} /> */}
         </button>
 
         <nav aria-label="주요 메뉴" className="sidebar__navigation">
@@ -91,10 +100,10 @@ export function Sidebar() {
 
       <div className="sidebar__footer">
         <button className="sidebar__user" type="button">
-          <span className="sidebar__user-avatar">서</span>
+          <span className="sidebar__user-avatar">{userName.charAt(0)}</span>
           <span className="sidebar__workspace-copy">
-            <strong>김서현 선생님</strong>
-            <small>관리자</small>
+            <strong>{userName}</strong>
+            <small>{userRole}</small>
           </span>
           <Icon name="chevron-down" size={14} />
         </button>

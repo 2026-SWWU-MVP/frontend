@@ -1,3 +1,5 @@
+import { clearStoredAcademy } from '@/shared/academy/academy'
+
 export interface LoginUserResponse {
   userId: number
   loginId: string
@@ -9,7 +11,7 @@ export interface LoginUserResponse {
 export interface AuthSession {
   userId: number
   loginId: string
-  name: string
+  name: string | null
   role: LoginUserResponse['role']
   academyId: number | null
 }
@@ -24,7 +26,7 @@ function isAuthSession(value: unknown): value is AuthSession {
   const session = value as Partial<AuthSession>
   return typeof session.userId === 'number'
     && typeof session.loginId === 'string'
-    && typeof session.name === 'string'
+    && (session.name === null || typeof session.name === 'string')
     && (session.role === null || session.role === 'OWNER' || session.role === 'TEACHER' || session.role === 'STUDENT')
     && (session.academyId === null || typeof session.academyId === 'number')
 }
@@ -33,7 +35,7 @@ export function saveAuthSession(user: LoginUserResponse): AuthSession {
   const session: AuthSession = {
     userId: user.userId,
     loginId: user.loginId,
-    name: user.name,
+    name: user.name ?? null,
     role: user.role,
     academyId: user.academyId,
   }
@@ -70,4 +72,5 @@ export function getStoredRole(): AuthSession['role'] {
 
 export function clearAuthSession() {
   sessionStorage.removeItem(storageKey)
+  clearStoredAcademy()
 }
