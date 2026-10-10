@@ -1,11 +1,11 @@
-import { Badge } from '@/shared/ui/Badge/Badge'
-import { Button } from '@/shared/ui/Button/Button'
-import type { WorkspaceResponse } from '@/entities/workspace/model/types'
+import { Badge } from "@/shared/ui/Badge/Badge";
+import { Button } from "@/shared/ui/Button/Button";
+import type { WorkspaceResponse } from "@/entities/workspace/model/types";
 
-import './ExamInsight.css'
+import "./ExamInsight.css";
 
 interface ExamInsightProps {
-  insight: WorkspaceResponse['insight']
+  insight: WorkspaceResponse["insight"];
 }
 
 export function ExamInsight({ insight }: ExamInsightProps) {
@@ -36,5 +36,5 @@ export function ExamInsight({ insight }: ExamInsightProps) {
         </div>
       </div>
     </section>
-  )
+  );
 }

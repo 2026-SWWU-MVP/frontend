@@ -1,7 +1,7 @@
-import type { ProblemQuestion } from '@/entities/problem-set/model/types'
+import type { ProblemQuestion } from "@/entities/problem-set/model/types";
 
 interface ProblemViewProps {
-  question: ProblemQuestion
+  question: ProblemQuestion;
 }
 
 export function ProblemView({ question }: ProblemViewProps) {
@@ -10,5 +10,5 @@ export function ProblemView({ question }: ProblemViewProps) {
       <p className="problem-view__label">문항</p>
       <p className="problem-view__prompt">{question.prompt}</p>
     </section>
-  )
+  );
 }

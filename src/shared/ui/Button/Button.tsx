@@ -1,13 +1,22 @@
-import type { ButtonHTMLAttributes, PropsWithChildren } from 'react'
+import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 
-import './Button.css'
+import "./Button.css";
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text'
+type ButtonVariant = "primary" | "secondary" | "outline" | "text";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant
+  variant?: ButtonVariant;
 }
 
-export function Button({ children, className = '', variant = 'secondary', ...props }: PropsWithChildren<ButtonProps>) {
-  return <button className={`button button--${variant} ${className}`} {...props}>{children}</button>
+export function Button({
+  children,
+  className = "",
+  variant = "secondary",
+  ...props
+}: PropsWithChildren<ButtonProps>) {
+  return (
+    <button className={`button button--${variant} ${className}`} {...props}>
+      {children}
+    </button>
+  );
 }
