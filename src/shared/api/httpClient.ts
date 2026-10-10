@@ -1,5 +1,5 @@
 import { appConfig } from '@/shared/config/env'
-import { getStoredUserId } from '@/shared/auth/session'
+import { clearAuthSession, getStoredUserId } from '@/shared/auth/session'
 
 import type { ApiClient, ApiRequest } from './types'
 
@@ -96,7 +96,14 @@ async function parseResponse<TResponse>(
       : typeof body === 'string' && body.length > 0
         ? body
         : `Request failed with ${response.status}`
-    throw new ApiError(message, response.status, body)
+    const error = new ApiError(message, response.status, body)
+    if (response.status === 401) {
+      clearAuthSession()
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login')
+      }
+    }
+    throw error
   }
 
   return body as TResponse

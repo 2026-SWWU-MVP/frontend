@@ -5,6 +5,9 @@ import {
   getConfirmedProfile,
   getGeneratedProblems,
   getGenerationJob,
+  getAcceptedProblems,
+  getWorksheet,
+  createWorksheet,
   getMaterial,
   getMaterialPassages,
   uploadMaterialPdf,
@@ -67,17 +70,18 @@ function wait(milliseconds: number) {
 }
 
 async function waitForMaterialSplit(materialId: number) {
-  for (;;) {
+  for (let attempt = 0; attempt < 90; attempt += 1) {
     const material = await getMaterial(materialId);
     if (material.status === "SPLIT" || material.status === "FAILED") {
       return material;
     }
     await wait(2000);
   }
+  throw new Error("자료 분리 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.");
 }
 
 async function waitForGeneration(jobId: number, onProgress: (progress: number) => void) {
-  for (;;) {
+  for (let attempt = 0; attempt < 90; attempt += 1) {
     const job = await getGenerationJob(jobId);
     onProgress(job.progress ?? 0);
     if (job.status === "COMPLETED" || job.status === "FAILED") {
@@ -85,6 +89,7 @@ async function waitForGeneration(jobId: number, onProgress: (progress: number) =
     }
     await wait(2000);
   }
+  throw new Error("문제 생성 시간이 초과되었습니다. 잠시 후 다시 확인해 주세요.");
 }
 function Stepper({ stage }: { stage: ProblemSetStage }) {
   const active = stages.findIndex((item) => item.id === stage);
@@ -756,10 +761,29 @@ export function ProblemSetPage() {
     }
   };
 
-  const nextQuestion = () =>
-    currentQuestionIndex === data.questions.length - 1
-      ? setStage("output")
-      : setCurrentQuestionIndex((index) => index + 1);
+  const nextQuestion = async () => {
+    if (currentQuestionIndex !== data.questions.length - 1) {
+      setCurrentQuestionIndex((index) => index + 1);
+      return;
+    }
+    setError(null);
+    try {
+      const workspaceId = requireWorkspaceId();
+      const accepted = await getAcceptedProblems(workspaceId);
+      if (accepted.length === 0) throw new Error("채택된 문항이 없어 시험지를 만들 수 없습니다.");
+      const worksheet = await createWorksheet(workspaceId, {
+        title: data.title || "문제 세트",
+        problemIds: accepted.map((problem) => problem.id),
+        headerText: "수업용 문제지",
+        showLogo: true,
+      });
+      await getWorksheet(worksheet.id);
+      setData((current) => ({ ...current, worksheetId: worksheet.id }));
+      setStage("output");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "시험지를 만들지 못했습니다.");
+    }
+  };
   return (
     <PageContainer>
       <div className="problem-set-page">
