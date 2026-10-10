@@ -57,7 +57,7 @@ export function Sidebar() {
           <span className="sidebar__brand-icon">
             <Icon name="book-open" size={20} tone="accent" />
           </span>
-          <strong>테스트핏</strong>
+          <strong>내신 뚝딱</strong>
         </a>
 
         <button className="sidebar__workspace" type="button">

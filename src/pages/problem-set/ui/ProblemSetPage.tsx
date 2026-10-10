@@ -1,5 +1,18 @@
-import { useEffect, useState } from "react";
-import { problemSetRepository } from "@/entities/problem-set/api/repository";
+import { useRef, useState } from "react";
+import {
+  createGenerationJob,
+  downloadWorksheetPdf,
+  getConfirmedProfile,
+  getGeneratedProblems,
+  getGenerationJob,
+  getAcceptedProblems,
+  getWorksheet,
+  createWorksheet,
+  getMaterial,
+  getMaterialPassages,
+  uploadMaterialPdf,
+} from "@/entities/problem-set/api/repository";
+import type { ProblemResponse } from "@/entities/problem-set/api/repository";
 import type {
   ProblemQuestion,
   ProblemSetResponse,
@@ -8,6 +21,7 @@ import type {
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import { requireWorkspaceId } from "@/shared/auth/workspace";
 import "./ProblemSetPage.css";
 
 const stages: Array<{ id: ProblemSetStage; label: string }> = [
@@ -16,6 +30,67 @@ const stages: Array<{ id: ProblemSetStage; label: string }> = [
   { id: "review", label: "공동 검토" },
   { id: "output", label: "확정·출력" },
 ];
+
+const emptyProblemSet: ProblemSetResponse = {
+  id: "backend-problem-set",
+  title: "",
+  description: "",
+  questions: [],
+  files: [],
+  school: "",
+  grade: "",
+  subject: "",
+  area: "",
+  exam: "",
+  scope: "",
+  passage: "",
+  prompt: "",
+};
+
+function problemResponseToQuestion(problem: ProblemResponse, index: number): ProblemQuestion {
+  return {
+    id: String(problem.id),
+    number: index + 1,
+    stage: "review",
+    stageLabel: problem.typeLabel ?? problem.type ?? "",
+    title: problem.stem ?? problem.body ?? "",
+    prompt: problem.stem ?? problem.body ?? "",
+    answerText: problem.answerText,
+    explanation: problem.explanation,
+    choices: (problem.choices ?? []).map((choice, choiceIndex) => ({
+      id: `${problem.id}-${choiceIndex}`,
+      label: String.fromCharCode(65 + choiceIndex),
+      text: choice,
+    })),
+  };
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+async function waitForMaterialSplit(materialId: number) {
+  for (let attempt = 0; attempt < 90; attempt += 1) {
+    const material = await getMaterial(materialId);
+    if (material.status === "SPLIT" || material.status === "FAILED") {
+      return material;
+    }
+    await wait(2000);
+  }
+  throw new Error("자료 분리 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.");
+}
+
+async function waitForGeneration(jobId: number, onProgress: (progress: number) => void) {
+  for (let attempt = 0; attempt < 90; attempt += 1) {
+    const job = await getGenerationJob(jobId);
+    onProgress(job.progress ?? 0);
+    if (job.status === "COMPLETED" || job.status === "FAILED") {
+      return job;
+    }
+    await wait(2000);
+  }
+  throw new Error("문제 생성 시간이 초과되었습니다. 잠시 후 다시 확인해 주세요.");
+}
 function Stepper({ stage }: { stage: ProblemSetStage }) {
   const active = stages.findIndex((item) => item.id === stage);
   return (
@@ -153,10 +228,16 @@ function Actions({
 function Source({
   data,
   next,
+  onUpload,
+  uploading,
 }: {
   data: ProblemSetResponse;
   next: () => void;
+  onUpload: (file: File) => void;
+  uploading: boolean;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <>
       <div className="stage-grid source-grid">
@@ -174,9 +255,25 @@ function Source({
             <Icon name="files" size={22} tone="accent" />
             <strong>시험지 또는 보유 자료를 여기에 놓아주세요</strong>
             <small>PDF, HWP, DOCX, JPG, PNG · 파일당 최대 30MB</small>
-            <Button variant="secondary">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) onUpload(file);
+                event.target.value = "";
+              }}
+            />
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <Icon name="plus" size={14} />
-              파일 선택
+              {uploading ? "업로드 중..." : "파일 선택"}
             </Button>
           </div>
           <Files files={data.files} />
@@ -200,12 +297,16 @@ function Source({
 }
 function Generation({
   data,
-  next,
   back,
+  onGenerate,
+  generating,
+  progress,
 }: {
   data: ProblemSetResponse;
-  next: () => void;
   back: () => void;
+  onGenerate: () => void;
+  generating: boolean;
+  progress: number;
 }) {
   return (
     <>
@@ -253,14 +354,16 @@ function Generation({
           <section className="set-card progress-card">
             <div className="set-card-heading">
               <h2>AI 생성 진행</h2>
-              <span className="success-badge">생성 완료</span>
+              <span className={generating ? "accent-badge" : "success-badge"}>
+                {generating ? "생성 중..." : "생성 완료"}
+              </span>
             </div>
             <div className="progress-title">
               <strong>2문항과 정답·해설 초안이 준비됐어요</strong>
-              <b>100%</b>
+              <b>{progress}%</b>
             </div>
             <div className="wide-progress">
-              <i />
+              <i style={{ width: `${progress}%` }} />
             </div>
             <div className="check-grid">
               {[
@@ -286,7 +389,7 @@ function Generation({
         back="자료 입력으로"
         primary="생성 문항 검토하기"
         onBack={back}
-        onPrimary={next}
+        onPrimary={onGenerate}
       />
     </>
   );
@@ -335,6 +438,9 @@ function Question({
   );
 }
 function ReviewAside({ data }: { data: ProblemSetResponse }) {
+  const sourceFile = data.files[0];
+  const referenceFile = data.files[1] ?? sourceFile;
+
   return (
     <aside className="review-aside">
       <section className="set-card answer-card">
@@ -362,11 +468,11 @@ function ReviewAside({ data }: { data: ProblemSetResponse }) {
       <section className="set-card evidence-side">
         <h2>원본과 생성 근거</h2>
         <span className="neutral-badge">사용자 제공 자료</span>
-        <strong>{data.files[1].name}</strong>
+        <strong>{sourceFile?.name ?? ""}</strong>
         <small>2쪽 · 공공재 개념 설명 / 직접 입력 지문</small>
         <hr />
         <span className="accent-badge">유형 참고</span>
-        <strong>{data.files[0].name}</strong>
+        <strong>{referenceFile?.name ?? ""}</strong>
         <small>3쪽 · 12~13번 / 내용 일치 · 사례 적용</small>
         <a href="#source">원본과 나란히 보기 →</a>
       </section>
@@ -430,9 +536,13 @@ function Review({
 function Output({
   data,
   restart,
+  worksheetId,
+  onDownload,
 }: {
   data: ProblemSetResponse;
   restart: () => void;
+  worksheetId?: number;
+  onDownload: (answer: boolean) => void;
 }) {
   return (
     <>
@@ -488,7 +598,13 @@ function Output({
                 <small>지문·문항 · 정답 미포함 · 1쪽</small>
               </div>
             </div>
-            <Button variant="primary">문제지 PDF 다운로드</Button>
+            <Button
+              variant="primary"
+              disabled={worksheetId === undefined}
+              onClick={() => onDownload(false)}
+            >
+              문제지 PDF 다운로드
+            </Button>
             <hr />
             <div className="pdf-file">
               <Icon name="files" size={18} tone="accent" />
@@ -502,7 +618,13 @@ function Output({
               <hr />
               01번 ② 02번 ④
             </div>
-            <Button variant="secondary">정답·해설지 PDF 다운로드</Button>
+            <Button
+              variant="secondary"
+              disabled={worksheetId === undefined}
+              onClick={() => onDownload(true)}
+            >
+              정답·해설지 PDF 다운로드
+            </Button>
           </section>
           <section className="set-card branding-card">
             <h2>학원 브랜딩·편집 설정</h2>
@@ -542,38 +664,147 @@ function Output({
   );
 }
 export function ProblemSetPage() {
-  const [data, setData] = useState<ProblemSetResponse | null>(null);
+  const [data, setData] = useState<ProblemSetResponse>(emptyProblemSet);
   const [stage, setStage] = useState<ProblemSetStage>("source");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  useEffect(() => {
-    problemSetRepository.execute().then(setData);
-  }, []);
-  if (!data)
-    return (
-      <PageContainer>
-        <p>문제 세트를 불러오는 중입니다.</p>
-      </PageContainer>
-    );
-  const nextQuestion = () =>
-    currentQuestionIndex === data.questions.length - 1
-      ? setStage("output")
-      : setCurrentQuestionIndex((index) => index + 1);
+  const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = async (file: File) => {
+    setError(null);
+    setUploading(true);
+    try {
+      const workspaceId = requireWorkspaceId();
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        throw new Error("PDF 파일만 업로드할 수 있습니다.");
+      }
+      const material = await uploadMaterialPdf(workspaceId, file);
+      setData((current) => ({
+        ...current,
+        id: String(material.id),
+        materialId: material.id,
+        files: [{
+          id: String(material.id),
+          name: material.originalFilename ?? file.name,
+          meta: `${material.status}${material.pageCount ? ` · ${material.pageCount}쪽` : ""}`,
+        }],
+      }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const generate = async () => {
+    if (generating) return;
+    setError(null);
+    setGenerating(true);
+    setProgress(0);
+    try {
+      const workspaceId = requireWorkspaceId();
+      if (data.materialId === undefined) {
+        throw new Error("먼저 PDF 파일을 업로드해 주세요.");
+      }
+
+      const material = await waitForMaterialSplit(data.materialId);
+      if (material.status === "FAILED") {
+        throw new Error(material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.");
+      }
+      const passages = await getMaterialPassages(data.materialId);
+      if (passages.length === 0) {
+        throw new Error("생성에 사용할 지문이 없습니다.");
+      }
+      const profile = await getConfirmedProfile(workspaceId);
+      const job = await createGenerationJob(
+        workspaceId,
+        profile.id,
+        passages.map((passage) => passage.id),
+      );
+      const completedJob = await waitForGeneration(job.id, setProgress);
+      if (completedJob.status === "FAILED") {
+        throw new Error(completedJob.failureReason ?? "문제 생성에 실패했습니다.");
+      }
+      const problems = await getGeneratedProblems(job.id);
+      if (problems.length === 0) {
+        throw new Error("생성된 문제가 없습니다.");
+      }
+      setData((current) => ({
+        ...current,
+        generationJobId: job.id,
+        passage: passages[0]?.content ?? "",
+        questions: problems.map(problemResponseToQuestion),
+      }));
+      setCurrentQuestionIndex(0);
+      setStage("review");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "문제 생성에 실패했습니다.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const download = async (answer: boolean) => {
+    if (data.worksheetId === undefined) return;
+    try {
+      const blob = await downloadWorksheetPdf(data.worksheetId, answer);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = answer ? "answer-sheet.pdf" : "worksheet.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "PDF 다운로드에 실패했습니다.");
+    }
+  };
+
+  const nextQuestion = async () => {
+    if (currentQuestionIndex !== data.questions.length - 1) {
+      setCurrentQuestionIndex((index) => index + 1);
+      return;
+    }
+    setError(null);
+    try {
+      const workspaceId = requireWorkspaceId();
+      const accepted = await getAcceptedProblems(workspaceId);
+      if (accepted.length === 0) throw new Error("채택된 문항이 없어 시험지를 만들 수 없습니다.");
+      const worksheet = await createWorksheet(workspaceId, {
+        title: data.title || "문제 세트",
+        problemIds: accepted.map((problem) => problem.id),
+        headerText: "수업용 문제지",
+        showLogo: true,
+      });
+      await getWorksheet(worksheet.id);
+      setData((current) => ({ ...current, worksheetId: worksheet.id }));
+      setStage("output");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "시험지를 만들지 못했습니다.");
+    }
+  };
   return (
     <PageContainer>
       <div className="problem-set-page">
         <Header data={data} stage={stage} />
         <Stepper stage={stage} />
+        {error && <div className="privacy-note">{error}</div>}
         {stage === "source" && (
-          <Source data={data} next={() => setStage("generation")} />
+          <Source
+            data={data}
+            uploading={uploading}
+            onUpload={upload}
+            next={() => setStage("generation")}
+          />
         )}
         {stage === "generation" && (
           <Generation
             data={data}
             back={() => setStage("source")}
-            next={() => {
-              setCurrentQuestionIndex(0);
-              setStage("review");
-            }}
+            onGenerate={generate}
+            generating={generating}
+            progress={progress}
           />
         )}
         {stage === "review" && (
@@ -586,6 +817,8 @@ export function ProblemSetPage() {
         {stage === "output" && (
           <Output
             data={data}
+            worksheetId={data.worksheetId}
+            onDownload={download}
             restart={() => {
               setStage("source");
               setCurrentQuestionIndex(0);
