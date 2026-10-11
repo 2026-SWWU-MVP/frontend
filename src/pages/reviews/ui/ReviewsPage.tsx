@@ -4,6 +4,9 @@ import type { ReviewData, ReviewFilters } from "@/entities/reviews/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import { getAuthSession } from "@/shared/auth/session";
+import { getStoredAcademy } from "@/shared/academy/academy";
+import { useAcademyState } from "@/shared/academy/state";
 import "./ReviewsPage.css";
 
 const initialFilters: ReviewFilters = {
@@ -204,7 +207,7 @@ function EvidenceCard({ evidence }: { evidence: ReviewData["evidence"] }) {
     </section>
   );
 }
-function SummaryCard({ data }: { data: ReviewData }) {
+function SummaryCard({ data, academyName }: { data: ReviewData; academyName: string }) {
   return (
     <section className="review-card summary-card">
       <div className="review-card-heading">
@@ -220,7 +223,7 @@ function SummaryCard({ data }: { data: ReviewData }) {
         <i />
       </label>
       <div className="summary-paper">
-        <strong>솔샘학원 · 시험 후 학습 안내</strong>
+        <strong>{academyName} · 시험 후 학습 안내</strong>
         <h3>{data.summary.title}</h3>
         <p>{data.summary.body}</p>
         <small>
@@ -274,6 +277,10 @@ function NotesCard({ note }: { note: string }) {
   );
 }
 export function ReviewsPage() {
+  const userId = getAuthSession()?.userId ?? null;
+  const academyState = useAcademyState(userId);
+  const academy = getStoredAcademy(userId ?? undefined);
+  const academyName = academy?.name ?? (academyState.status === "loading" ? "학원 정보 로딩 중" : "학원 정보 없음");
   const [filters, setFilters] = useState(initialFilters);
   const [data, setData] = useState<ReviewData | null>(null);
   useEffect(() => {
@@ -331,7 +338,7 @@ export function ReviewsPage() {
             <NotesCard note={data.note} />
           </div>
           <div>
-            <SummaryCard data={data} />
+            <SummaryCard data={data} academyName={academyName} />
             <LimitationsCard items={data.limitations} />
           </div>
         </div>

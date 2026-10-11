@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { checkLoginId, login, signup } from '@/entities/auth/api/repository'
 import { saveAuthSession } from '@/shared/auth/session'
+import { loadAcademy } from '@/shared/academy/state'
 
 import './AuthPage.css'
 
@@ -40,6 +41,10 @@ export function AuthPage({ mode = 'login' }: { mode?: 'login' | 'signup' }) {
       } else {
         const response = await login({ loginId: form.loginId, password: form.password })
         saveAuthSession(response)
+        if (response.academyId !== null) {
+          // 학원 조회 실패는 인증 성공과 분리한다. AppShell에서 재시도할 수 있다.
+          try { await loadAcademy(response.userId, { force: true }) } catch { /* 로그인은 계속한다. */ }
+        }
         navigate(response.academyId === null ? '/academy' : '/workspace', { replace: true })
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : '요청을 처리하지 못했습니다.') } finally { setLoading(false) }
