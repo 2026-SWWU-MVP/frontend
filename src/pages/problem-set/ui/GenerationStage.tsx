@@ -21,7 +21,6 @@ export function GenerationStage({
         <section className="set-card selected-material">
           <div className="set-card-heading">
             <h2>선택한 생성 자료</h2>
-            <a href="#source">변경</a>
           </div>
           <div className="file-list">
             {data.files.map((file) => (
