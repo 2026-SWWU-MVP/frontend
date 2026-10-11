@@ -1,6 +1,8 @@
 import type { WorkspaceResponse } from "@/entities/workspace/model/types";
 
 export const workspaceMockResponse: WorkspaceResponse = {
+  id: 0,
+  options: [],
   title: "오늘의 수업 준비, 한결 가볍게",
   description: "김서연 선생님, 검토를 기다리는 문제 세트가 3개 있어요.",
   primaryActionLabel: "새 문제 세트 만들기",

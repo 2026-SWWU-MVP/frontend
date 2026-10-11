@@ -17,6 +17,7 @@ export interface AuthSession {
 }
 
 const storageKey = 'testfit.auth-session'
+export const selectedWorkspaceStorageKey = 'testfit.workspace-id'
 
 function isAuthSession(value: unknown): value is AuthSession {
   if (typeof value !== 'object' || value === null) {
@@ -72,5 +73,6 @@ export function getStoredRole(): AuthSession['role'] {
 
 export function clearAuthSession() {
   sessionStorage.removeItem(storageKey)
+  sessionStorage.removeItem(selectedWorkspaceStorageKey)
   clearStoredAcademy()
 }
