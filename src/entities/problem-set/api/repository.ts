@@ -19,18 +19,75 @@ export interface MaterialResponse {
 
 export interface PastExamResponse {
   id: number
-  status: 'UPLOADED' | 'ANALYZING' | 'EXTRACTED' | 'FAILED'
+  workspaceId?: number
+  examYear?: number
+  semester?: number
+  examType?: 'MIDTERM' | 'FINAL'
+  originalFilename?: string
+  pageCount?: number
+  scanned?: boolean
+  status: 'UPLOADED' | 'EXTRACTING' | 'EXTRACTED' | 'FAILED'
   failureReason?: string
+  objectiveCount?: number
+  subjectiveCount?: number
+  createdAt?: string
+  extractedAt?: string
 }
 
 export interface PastQuestionResponse {
   id: number
+  orderNo?: number
+  section?: 'OBJECTIVE' | 'SUBJECTIVE'
+  no?: number
+  type?: string
+  passageCodes?: string[]
   passageId?: number
   stem?: string
+  body?: string
+  conditions?: string[]
   choices?: string[]
+  answer?: string
   answerText?: string
-  explanation?: string
+  points?: number
+  edited?: boolean
   issues?: string[]
+}
+
+export interface PastExamExtractionResponse {
+  examId: number
+  status: PastExamResponse['status']
+  passages: Array<{ id: number; code: string; title: string; text: string; edited: boolean; issues: string[] }>
+  questions: PastQuestionResponse[]
+  examIssues: string[]
+  warnings: string[]
+  issueCount: number
+}
+
+export interface UpdatePastQuestionRequest {
+  section?: 'OBJECTIVE' | 'SUBJECTIVE'
+  no?: number
+  type?: string
+  passageCodes?: string[]
+  stem?: string
+  body?: string
+  conditions?: string[]
+  choices?: string[]
+  answer?: string
+  points?: number
+  clearPoints?: boolean
+}
+
+export interface UpdatePastPassageRequest {
+  title?: string
+  text?: string
+}
+
+export interface ProfileSummaryResponse {
+  id: number
+  version: number
+  status: 'DRAFT' | 'CONFIRMED' | 'SUPERSEDED'
+  createdAt?: string
+  confirmedAt?: string
 }
 
 export interface ProfileResponse {
@@ -146,7 +203,7 @@ export function uploadPastExam(workspaceId: number, file: File, examYear: number
 }
 
 export function analyzePastExam(pastExamId: number) {
-  return httpClient.request<void>({ path: `/api/past-exams/${pastExamId}/analyze`, init: { method: 'POST' } })
+  return httpClient.request<PastExamResponse>({ path: `/api/past-exams/${pastExamId}/analyze`, init: { method: 'POST' } })
 }
 
 export function getPastExam(pastExamId: number) {
@@ -154,15 +211,16 @@ export function getPastExam(pastExamId: number) {
 }
 
 export function getPastExamQuestions(pastExamId: number) {
-  return httpClient.request<PastQuestionResponse[]>({ path: `/api/past-exams/${pastExamId}/questions` })
+  return httpClient.request<PastExamExtractionResponse>({ path: `/api/past-exams/${pastExamId}/questions` })
 }
 
-export function updatePastQuestion(questionId: number, request: Partial<PastQuestionResponse>) {
-  return httpClient.request<PastQuestionResponse>({ path: `/api/past-questions/${questionId}`, init: { method: 'PATCH' }, json: request })
+export function updatePastQuestion(questionId: number, request: UpdatePastQuestionRequest) {
+  return httpClient.request<PastExamExtractionResponse>({ path: `/api/past-questions/${questionId}`, init: { method: 'PATCH' }, json: request })
 }
 
 export function updatePastPassage(passageId: number, content: string, title?: string) {
-  return httpClient.request<PassageResponse>({ path: `/api/past-passages/${passageId}`, init: { method: 'PATCH' }, json: { content, ...(title === undefined ? {} : { title }) } })
+  const request: UpdatePastPassageRequest = { text: content, ...(title === undefined ? {} : { title }) }
+  return httpClient.request<PastExamExtractionResponse>({ path: `/api/past-passages/${passageId}`, init: { method: 'PATCH' }, json: request })
 }
 
 export function createProfile(workspaceId: number) {
@@ -208,6 +266,12 @@ export function updatePassage(passageId: number, content: string, title?: string
 export function getConfirmedProfile(workspaceId: number) {
   return httpClient.request<ProfileResponse>({
     path: workspacePath(workspaceId, '/profiles/confirmed'),
+  })
+}
+
+export function listProfiles(workspaceId: number) {
+  return httpClient.request<ProfileSummaryResponse[]>({
+    path: workspacePath(workspaceId, '/profiles'),
   })
 }
 
