@@ -4,6 +4,24 @@
   gap: var(--spacing-24);
 }
 
+.workspace-page__select {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8, 8px);
+  margin-bottom: var(--spacing-16, 16px);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-14);
+}
+
+.workspace-page__select select {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border, #d9d9e3);
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
 .workspace-page__message {
   margin: 0;
   color: var(--color-text-secondary);
