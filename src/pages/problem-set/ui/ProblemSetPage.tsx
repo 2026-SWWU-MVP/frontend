@@ -1,8 +1,6 @@
 import { useRef, useState } from "react";
 import {
   createGenerationJob,
-  downloadWorksheetPdf,
-  getConfirmedProfile,
   getGeneratedProblems,
   getGenerationJob,
   getAcceptedProblems,
@@ -10,29 +8,75 @@ import {
   createWorksheet,
   getMaterial,
   getMaterialPassages,
-  uploadMaterialPdf,
+  analyzePastExam,
+  getPastExam,
+  getPastExamQuestions,
 } from "@/entities/problem-set/api/repository";
-import type { ProblemResponse } from "@/entities/problem-set/api/repository";
+import type {
+  PastExamResponse,
+  ProblemResponse,
+} from "@/entities/problem-set/api/repository";
 import type {
   ProblemQuestion,
   ProblemSetResponse,
   ProblemSetStage,
 } from "@/entities/problem-set/model/types";
+import { buildProblemSetName } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import { requireWorkspaceId } from "@/shared/auth/workspace";
 import { getAuthSession } from "@/shared/auth/session";
-import { formatAcademyCreatedAt, getAcademyPlanLabel, getStoredAcademy } from "@/shared/academy/academy";
+import { getStoredAcademy } from "@/shared/academy/academy";
 import { useAcademyState } from "@/shared/academy/state";
 import "./ProblemSetPage.css";
+import {
+  uploadMaterial as uploadMaterialWorkflow,
+  uploadPastExamFile as uploadPastExamWorkflow,
+} from "@/pages/problem-set/model/sourceWorkflow";
+import {
+  acceptProblem,
+  regenerateReviewedProblem,
+} from "@/pages/problem-set/model/reviewWorkflow";
+import { resolveConfirmedProfile } from "@/pages/problem-set/model/generationWorkflow";
+import { downloadProblemWorksheet } from "@/pages/problem-set/model/outputWorkflow";
+import { SourceStage } from "@/pages/problem-set/ui/SourceStage";
+import { GenerationStage } from "@/pages/problem-set/ui/GenerationStage";
+import { ReviewStage } from "@/pages/problem-set/ui/ReviewStage";
+import { OutputStage } from "@/pages/problem-set/ui/OutputStage";
+import { useSourceState } from "@/pages/problem-set/model/useSourceState";
+import { useGenerationState } from "@/pages/problem-set/model/useGenerationState";
+import { useReviewState } from "@/pages/problem-set/model/useReviewState";
+import {
+  problemResponseToQuestion as toProblemQuestion,
+  waitForGeneration as waitForGenerationWorkflow,
+  waitForMaterialSplit as waitForMaterialSplitWorkflow,
+  waitForPastExamExtraction as waitForPastExamExtractionWorkflow,
+} from "@/pages/problem-set/model/workflow";
 
 const stages: Array<{ id: ProblemSetStage; label: string }> = [
+  { id: "source", label: "자료 입력" },
+  { id: "generation", label: "AI 생성" },
+  { id: "review", label: "문항 검토" },
+  { id: "output", label: "확정·출력" },
+];
+
+/* Legacy stage labels retained below for reference only.
+const brokenStages: Array<{ id: ProblemSetStage; label: string }> = [
+  { id: "source", label: "자료 입력" },
+  { id: "generation", label: "AI 생성" },
+  { id: "review", label: "문항 검토" },
+  { id: "output", label: "확정·출력" },
+];
+
+const legacyStages: Array<{ id: ProblemSetStage; label: string }> = [
   { id: "source", label: "자료 입력" },
   { id: "generation", label: "AI 생성" },
   { id: "review", label: "공동 검토" },
   { id: "output", label: "확정·출력" },
 ];
+
+*/
 
 const emptyProblemSet: ProblemSetResponse = {
   id: "backend-problem-set",
@@ -45,12 +89,13 @@ const emptyProblemSet: ProblemSetResponse = {
   subject: "",
   area: "",
   exam: "",
-  scope: "",
   passage: "",
-  prompt: "",
 };
 
-function problemResponseToQuestion(problem: ProblemResponse, index: number): ProblemQuestion {
+function problemResponseToQuestion(
+  problem: ProblemResponse,
+  index: number,
+): ProblemQuestion {
   return {
     id: String(problem.id),
     number: index + 1,
@@ -60,6 +105,7 @@ function problemResponseToQuestion(problem: ProblemResponse, index: number): Pro
     prompt: problem.stem ?? problem.body ?? "",
     answerText: problem.answerText,
     explanation: problem.explanation,
+    reviewStatus: problem.reviewStatus,
     choices: (problem.choices ?? []).map((choice, choiceIndex) => ({
       id: `${problem.id}-${choiceIndex}`,
       label: String.fromCharCode(65 + choiceIndex),
@@ -72,7 +118,7 @@ function wait(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-async function waitForMaterialSplit(materialId: number) {
+async function waitForMaterialSplitLegacy(materialId: number) {
   for (let attempt = 0; attempt < 90; attempt += 1) {
     const material = await getMaterial(materialId);
     if (material.status === "SPLIT" || material.status === "FAILED") {
@@ -80,10 +126,30 @@ async function waitForMaterialSplit(materialId: number) {
     }
     await wait(2000);
   }
-  throw new Error("자료 분리 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.");
+  throw new Error(
+    "자료 분리 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.",
+  );
 }
 
-async function waitForGeneration(jobId: number, onProgress: (progress: number) => void) {
+async function waitForPastExamExtractionLegacy(
+  examId: number,
+  onStatus: (status: PastExamResponse["status"]) => void,
+) {
+  for (let attempt = 0; attempt < 90; attempt += 1) {
+    const exam = await getPastExam(examId);
+    onStatus(exam.status);
+    if (exam.status === "EXTRACTED" || exam.status === "FAILED") return exam;
+    await wait(2000);
+  }
+  throw new Error(
+    "기출 분석 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.",
+  );
+}
+
+async function waitForGenerationLegacy(
+  jobId: number,
+  onProgress: (progress: number) => void,
+) {
   for (let attempt = 0; attempt < 90; attempt += 1) {
     const job = await getGenerationJob(jobId);
     onProgress(job.progress ?? 0);
@@ -92,7 +158,9 @@ async function waitForGeneration(jobId: number, onProgress: (progress: number) =
     }
     await wait(2000);
   }
-  throw new Error("문제 생성 시간이 초과되었습니다. 잠시 후 다시 확인해 주세요.");
+  throw new Error(
+    "문제 생성 시간이 초과되었습니다. 잠시 후 다시 확인해 주세요.",
+  );
 }
 function Stepper({ stage }: { stage: ProblemSetStage }) {
   const active = stages.findIndex((item) => item.id === stage);
@@ -122,7 +190,7 @@ function SelectField({ label, value }: { label: string; value: string }) {
     </label>
   );
 }
-function Files({
+function LegacyFiles({
   files,
   selected = false,
 }: {
@@ -146,6 +214,81 @@ function Files({
     </div>
   );
 }
+
+function LegacyPendingFile({
+  name,
+  uploading,
+  failed,
+}: {
+  name: string;
+  uploading: boolean;
+  failed: boolean;
+}) {
+  return (
+    <div className="file-list">
+      <div className="set-file">
+        <span className="file-icon">
+          <Icon name="files" size={18} tone="accent" />
+        </span>
+        <div>
+          <strong>{name}</strong>
+          <small>
+            {uploading
+              ? "업로드 중..."
+              : failed
+                ? "업로드 실패"
+                : "파일 선택됨"}
+          </small>
+        </div>
+        <em className={failed ? "is-failed" : ""}>
+          {uploading ? "업로드 중" : failed ? "실패" : "대기 중"}
+        </em>
+      </div>
+    </div>
+  );
+}
+
+function LegacyDisplayedFiles({
+  files,
+  selected = false,
+}: {
+  files: ProblemSetResponse["files"];
+  selected?: boolean;
+}) {
+  return (
+    <div className="file-list">
+      {files.map((file) => {
+        const analyzed = /SPLIT|EXTRACTED/.test(file.meta);
+        return (
+          <div className="set-file" key={file.id}>
+            <span className="file-icon">
+              <Icon name="files" size={18} tone="accent" />
+            </span>
+            <div>
+              <strong>{file.name}</strong>
+              <small>{file.meta}</small>
+            </div>
+            <em>
+              {selected ? "선택됨" : analyzed ? "분석 완료" : "업로드 완료"}
+            </em>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+void LegacyPendingFile;
+void problemResponseToQuestion;
+void waitForMaterialSplitLegacy;
+void waitForPastExamExtractionLegacy;
+void waitForGenerationLegacy;
+
+void LegacyFiles;
+void LegacyInfoCard;
+
+void LegacyDisplayedFiles;
+
 function Header({
   data,
   stage,
@@ -178,7 +321,7 @@ function Header({
     </div>
   );
 }
-function InfoCard({ data }: { data: ProblemSetResponse }) {
+function LegacyInfoCard({ data }: { data: ProblemSetResponse }) {
   return (
     <section className="set-card info-card">
       <h2>문제 세트 정보</h2>
@@ -204,519 +347,312 @@ function InfoCard({ data }: { data: ProblemSetResponse }) {
     </section>
   );
 }
-function Actions({
-  back,
-  primary,
-  onBack,
-  onPrimary,
+
+const schoolOptions = ["건대부고", "압구정고", "현대고"];
+const gradeOptions = ["1", "2", "3", "4", "5", "6"];
+const subjectOptions = ["국어", "영어", "사회", "과학", "수학"];
+const examOptions = ["중간고사", "기말고사"];
+
+function InfoCard({
+  school,
+  grade,
+  subject,
+  exam,
+  onChange,
 }: {
-  back?: string;
-  primary: string;
-  onBack?: () => void;
-  onPrimary: () => void;
+  school: string;
+  grade: string;
+  subject: string;
+  exam: string;
+  onChange: (
+    key: "school" | "grade" | "subject" | "exam",
+    value: string,
+  ) => void;
 }) {
-  return (
-    <div className="set-actions">
-      {back && (
-        <Button variant="secondary" onClick={onBack}>
-          {back}
-        </Button>
-      )}
-      <Button variant="primary" onClick={onPrimary}>
-        → {primary}
-      </Button>
-    </div>
+  const field = (
+    label: string,
+    value: string,
+    options: string[],
+    key: "school" | "grade" | "subject" | "exam",
+  ) => (
+    <label className="set-field">
+      <strong>{label}</strong>
+      <select
+        value={value}
+        onChange={(event) => onChange(key, event.target.value)}
+      >
+        <option value="">선택해 주세요</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
   );
-}
-function Source({
-  data,
-  next,
-  onUpload,
-  uploading,
-}: {
-  data: ProblemSetResponse;
-  next: () => void;
-  onUpload: (file: File) => void;
-  uploading: boolean;
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <>
-      <div className="stage-grid source-grid">
-        <section className="set-card source-main">
-          <div className="set-card-heading">
-            <h2>자료 입력</h2>
-            <span className="accent-badge">2개 자료 선택됨</span>
-          </div>
-          <div className="source-tabs">
-            <strong>파일 업로드</strong>
-            <span>지문·문항 붙여넣기</span>
-            <span>보관함에서 선택</span>
-          </div>
-          <div className="upload-box">
-            <Icon name="files" size={22} tone="accent" />
-            <strong>시험지 또는 보유 자료를 여기에 놓아주세요</strong>
-            <small>PDF, HWP, DOCX, JPG, PNG · 파일당 최대 30MB</small>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,application/pdf"
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) onUpload(file);
-                event.target.value = "";
-              }}
-            />
-            <Button
-              variant="secondary"
-              type="button"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Icon name="plus" size={14} />
-              {uploading ? "업로드 중..." : "파일 선택"}
-            </Button>
-          </div>
-          <Files files={data.files} />
-          <div className="passage-block">
-            <strong>직접 입력한 지문 · 선택</strong>
-            <p>{data.prompt}</p>
-            <small>
-              파일과 직접 입력한 내용을 함께 생성 자료로 사용할 수 있어요.
-            </small>
-          </div>
-          <div className="privacy-note">
-            ⓘ 이용 권한이 있는 자료만 업로드해 주세요. 학생 이름·연락처 등
-            개인정보는 업로드 전에 삭제해 주세요.
-          </div>
-        </section>
-        <InfoCard data={data} />
-      </div>
-      <Actions primary="생성 설정으로 이동" onPrimary={next} />
-    </>
-  );
-}
-function Generation({
-  data,
-  back,
-  onGenerate,
-  generating,
-  progress,
-}: {
-  data: ProblemSetResponse;
-  back: () => void;
-  onGenerate: () => void;
-  generating: boolean;
-  progress: number;
-}) {
-  return (
-    <>
-      <div className="stage-grid generation-grid">
-        <section className="set-card selected-material">
-          <div className="set-card-heading">
-            <h2>선택한 생성 자료</h2>
-            <a href="#source">변경</a>
-          </div>
-          <Files files={data.files} selected />
-          <div className="preview-heading">
-            <strong>지문 미리보기</strong>
-            <span className="neutral-badge">공공재</span>
-          </div>
-          <p className="long-passage">{data.passage}</p>
-        </section>
-        <div className="generation-main">
-          <section className="set-card generation-settings">
-            <h2>생성 조건</h2>
-            <SelectField
-              label="학교·시험 경향 적용"
-              value="한빛고 · 국어 · 1학기 중간고사"
-            />
-            <small>데모 자료 3건 / 60문항 분석 · 2026.10.05 갱신</small>
-            <div className="condition-badges">
-              <span>내용 일치 중심</span>
-              <span>사례 적용 비중 30%</span>
-              <span>사용자 업로드 기반</span>
-            </div>
-            <hr />
-            <label className="set-field full">
-              <strong>선생님의 요청 · 사용자 프롬프트</strong>
-              <textarea defaultValue="공공재의 비경합성과 비배제성을 구분할 수 있도록 5지선다형 2문항을 만들어 주세요. 내용 일치 1문항과 새로운 가로등 사례를 적용하는 1문항으로 구성하고, 오답은 본문 근거와 해설을 포함해 주세요." />
-            </label>
-            <div className="field-grid three">
-              <SelectField label="문항 유형" value="5지선다형" />
-              <SelectField label="난이도" value="중 1 · 상 1" />
-              <SelectField label="생성 문항 수" value="2문항" />
-            </div>
-            <div className="setting-foot">
-              <small>포함 항목: 변형 지문 · 문항 · 정답 · 해설</small>
-              <span className="accent-badge">정답 검증 포함</span>
-            </div>
-          </section>
-          <section className="set-card progress-card">
-            <div className="set-card-heading">
-              <h2>AI 생성 진행</h2>
-              <span className={generating ? "accent-badge" : "success-badge"}>
-                {generating ? "생성 중..." : "생성 완료"}
-              </span>
-            </div>
-            <div className="progress-title">
-              <strong>2문항과 정답·해설 초안이 준비됐어요</strong>
-              <b>{progress}%</b>
-            </div>
-            <div className="wide-progress">
-              <i style={{ width: `${progress}%` }} />
-            </div>
-            <div className="check-grid">
-              {[
-                "자료 구조 확인",
-                "경향·요청 적용",
-                "문항·해설 생성",
-                "정답 교차 점검",
-              ].map((label) => (
-                <span key={label}>
-                  ✓ {label}
-                  <small>처리 완료 · 데모</small>
-                </span>
-              ))}
-            </div>
-            <div className="success-note">
-              ⓘ 자동 점검에서 정답 중복이 발견되지 않았습니다. 문항의 적절성과
-              해설은 공동 검토에서 최종 확인해 주세요.
-            </div>
-          </section>
-        </div>
-      </div>
-      <Actions
-        back="자료 입력으로"
-        primary="생성 문항 검토하기"
-        onBack={back}
-        onPrimary={onGenerate}
-      />
-    </>
-  );
-}
-function Question({
-  question,
-  index,
-}: {
-  question: ProblemQuestion;
-  index: number;
-}) {
-  return (
-    <article className="question-card">
-      <div className="question-meta">
-        <span>{question.stageLabel}</span>
-        <span>난이도 {index === 0 ? "중" : "상"}</span>
-        <span className="success-badge">검토 완료</span>
-        <Button variant="secondary">✎ 문항 편집</Button>
-      </div>
-      <h3>
-        <b>{String(question.number).padStart(2, "0")}</b>
-        {question.title}
-      </h3>
-      {index === 1 && (
-        <div className="example-box">
-          &lt;보기&gt;
-          <br />한 마을은 누구나 이용할 수 있는 가로등 설치를 추진했다. 주민들은
-          설치 후 모두가 빛을 누릴 수 있음을 알면서도 다른 주민이 비용을 내기를
-          기다렸다.
-        </div>
-      )}
-      <div className="choices">
-        {question.choices.map((choice) => (
-          <p key={choice.id}>
-            {choice.label} {choice.text}
-          </p>
-        ))}
-      </div>
-      <small className="question-review">
-        검토: 김서현 · 정답 및 발문 확인 완료
+    <section className="set-card info-card">
+      <h2>문제 세트 정보</h2>
+      {field("학교", school, schoolOptions, "school")}
+      {field("학년", grade, gradeOptions, "grade")}
+      {field("과목", subject, subjectOptions, "subject")}
+      {field("시험", exam, examOptions, "exam")}
+      <small className="field-help">
+        학교, 학년, 과목, 시험을 모두 선택하면 문제 세트 이름이 자동으로
+        생성됩니다.
       </small>
-      <button className="regenerate" type="button">
-        이 문항만 재생성 ↻
-      </button>
-    </article>
+    </section>
   );
 }
-function ReviewAside({ data }: { data: ProblemSetResponse }) {
-  const sourceFile = data.files[0];
-  const referenceFile = data.files[1] ?? sourceFile;
 
-  return (
-    <aside className="review-aside">
-      <section className="set-card answer-card">
-        <div className="set-card-heading">
-          <h2>정답과 해설</h2>
-          <span className="success-badge">확인 완료</span>
-        </div>
-        {data.questions.map((question, index) => (
-          <div className="answer-summary" key={question.id}>
-            <strong>
-              {String(question.number).padStart(2, "0")}번 ·{" "}
-              {question.stageLabel}
-            </strong>
-            <span>정답 {index === 0 ? "②" : "④"}</span>
-            <p>
-              {index === 0
-                ? "둘째 문단에서 무임승차로 인해 지불 의사가 낮게 드러난다고 설명한다."
-                : "비용을 내지 않아도 빛을 누릴 수 있어 주민들은 부담하기를 기다린다."}
-            </p>
-            <small>오답 점검: 본문 근거와 선택지의 관계를 확인했습니다.</small>
-          </div>
-        ))}
-        <Button variant="secondary">해설 편집</Button>
-      </section>
-      <section className="set-card evidence-side">
-        <h2>원본과 생성 근거</h2>
-        <span className="neutral-badge">사용자 제공 자료</span>
-        <strong>{sourceFile?.name ?? ""}</strong>
-        <small>2쪽 · 공공재 개념 설명 / 직접 입력 지문</small>
-        <hr />
-        <span className="accent-badge">유형 참고</span>
-        <strong>{referenceFile?.name ?? ""}</strong>
-        <small>3쪽 · 12~13번 / 내용 일치 · 사례 적용</small>
-        <a href="#source">원본과 나란히 보기 →</a>
-      </section>
-    </aside>
-  );
-}
-function Review({
-  data,
-  index,
-  next,
-}: {
-  data: ProblemSetResponse;
-  index: number;
-  next: () => void;
-}) {
-  const question = data.questions[index];
-  return (
-    <>
-      <div className="review-status">
-        <span>
-          문항 검토 완료 {index + 1} / {data.questions.length}
-        </span>
-        <span>해결된 의견 1개 검토자 김서현 · 이미지</span>
-        <small>마지막 저장 10:42</small>
-      </div>
-      <div className="stage-grid review-grid">
-        <section className="set-card questions-panel">
-          <div className="set-card-heading">
-            <h2>지문과 문항</h2>
-            <Button variant="secondary">✎ 지문 편집</Button>
-          </div>
-          <div className="content-tags">
-            <span>사회·경제</span>
-            <span>비문학 독서</span>
-            <small>지문 1개 · 5지선다</small>
-          </div>
-          <h3 className="passage-title">
-            [1~2] 다음 글을 읽고 물음에 답하세요.
-          </h3>
-          <p className="review-passage">{data.passage}</p>
-          <div className="question-divider" />
-          <Question question={question} index={index} />
-        </section>
-        <ReviewAside data={data} />
-      </div>
-      <div className="review-tip">
-        ⓘ AI 생성 문항은 교사의 확인을 거친 뒤 사용하세요. 확정하면 현재 버전이
-        보관되며, 이후 수정은 새 버전으로 저장됩니다.
-      </div>
-      <Actions
-        primary={
-          index === data.questions.length - 1
-            ? "검토 완료 · 세트 확정"
-            : "다음 문항 검토"
-        }
-        onPrimary={next}
-      />
-    </>
-  );
-}
-function Output({
-  data,
-  academy,
-  academyLoading,
-  restart,
-  worksheetId,
-  onDownload,
-}: {
-  data: ProblemSetResponse;
-  academy: ReturnType<typeof getStoredAcademy>;
-  academyLoading: boolean;
-  restart: () => void;
-  worksheetId?: number;
-  onDownload: (answer: boolean) => void;
-}) {
-  return (
-    <>
-      <div className="output-status">
-        <span className="success-badge">확정 완료</span>
-        <span className="neutral-badge">버전 1.0</span>
-        <small>수정 시 새 버전으로 저장됩니다.</small>
-        <Button variant="secondary">복제하여 수정</Button>
-      </div>
-      <div className="stage-grid output-grid">
-        <section className="preview-wrap">
-          <div className="preview-tabs">
-            <strong>문제지 미리보기</strong>
-            <span>정답·해설지</span>
-            <small>A4 · 100% · 1쪽</small>
-          </div>
-          <div className="paper">
-            <div className="paper-top">
-              <strong>{academy?.name ?? (academyLoading ? "학원 정보 로딩 중" : "학원 정보 없음")}</strong>
-              <small>
-                {data.school} · {data.grade} · {data.area}
-              </small>
-            </div>
-            <h2>{data.title}</h2>
-            <small>2026년 1학기 중간고사 대비 · 변형 문제</small>
-            <p className="paper-name">이름: ____________</p>
-            <h4>[1~2] 다음 글을 읽고 물음에 답하세요.</h4>
-            <p>{data.passage}</p>
-            {data.questions.map((question) => (
-              <div className="paper-question" key={question.id}>
-                <strong>
-                  {String(question.number).padStart(2, "0")} {question.title}
-                </strong>
-                {question.choices.map((choice) => (
-                  <span key={choice.id}>
-                    {choice.label} {choice.text}
-                  </span>
-                ))}
-              </div>
-            ))}
-            <footer>
-              {academy?.name ?? "학원 정보 없음"} · 수업용 데모 자료 / 무단 배포 금지 <b>1</b>
-            </footer>
-          </div>
-        </section>
-        <aside className="output-aside">
-          <section className="set-card pdf-card">
-            <h2>PDF 출력 파일</h2>
-            <div className="pdf-file">
-              <Icon name="files" size={18} tone="accent" />
-              <div>
-                <strong>문제지</strong>
-                <small>지문·문항 · 정답 미포함 · 1쪽</small>
-              </div>
-            </div>
-            <Button
-              variant="primary"
-              disabled={worksheetId === undefined}
-              onClick={() => onDownload(false)}
-            >
-              문제지 PDF 다운로드
-            </Button>
-            <hr />
-            <div className="pdf-file">
-              <Icon name="files" size={18} tone="accent" />
-              <div>
-                <strong>정답·해설지</strong>
-                <small>정답표 · 근거 · 오답 해설 · 1쪽</small>
-              </div>
-            </div>
-            <div className="answer-table">
-              공공재와 시장 실패 · 정답표
-              <hr />
-              01번 ② 02번 ④
-            </div>
-            <Button
-              variant="secondary"
-              disabled={worksheetId === undefined}
-              onClick={() => onDownload(true)}
-            >
-              정답·해설지 PDF 다운로드
-            </Button>
-          </section>
-          <section className="set-card branding-card">
-            <h2>학원 브랜딩·편집 설정</h2>
-            <label className="set-field full">
-              <strong>학원 표시명</strong>
-              <input value={academy?.name ?? ""} placeholder={academyLoading ? "학원 정보 로딩 중" : "학원 정보 없음"} readOnly />
-            </label>
-            <div className="academy-branding-summary">
-              <strong>{academy ? getAcademyPlanLabel(academy.plan) : "-"}</strong>
-              <span>{academy ? `${academy.teacherCount ?? "-"} / ${academy.maxTeachers ?? "-"}명` : "강사 수 정보 없음"}</span>
-              <span>{academy ? `생성일 ${formatAcademyCreatedAt(academy.createdAt)}` : "생성일 정보 없음"}</span>
-              <span>
-                {academy?.hasLogo
-                  ? academy.logoWidth != null && academy.logoHeight != null
-                    ? `등록 로고 · ${academy.logoWidth} × ${academy.logoHeight}px`
-                    : "등록 로고 · 크기 정보 없음"
-                  : "기본 로고 · 학원명 표시"}
-              </span>
-            </div>
-            <div className="field-grid">
-              <SelectField label="용지" value="A4 · 세로" />
-              <SelectField label="단 구성" value="1단" />
-              <SelectField label="글자 크기" value="10pt" />
-              <SelectField label="여백" value="기본 15mm" />
-            </div>
-            <label className="check-label">
-              <input type="checkbox" defaultChecked /> 이름 입력란 표시
-            </label>
-            <label className="check-label">
-              <input type="checkbox" defaultChecked /> 쪽 번호 · 학원명 표시
-            </label>
-            <label className="check-label">
-              <input type="checkbox" /> 문항별 배점 표시
-            </label>
-            <Button variant="secondary">미리보기 적용</Button>
-          </section>
-        </aside>
-      </div>
-      <div className="output-tip">
-        ✓ 지문·문항·정답·해설을 확인했습니다.
-        <small>
-          최종 확인자: 김서현 · 확정 후 문제지와 정답지를 출력할 수 있습니다.
-        </small>
-        <Button variant="primary" onClick={restart}>
-          처음부터 다시 보기
-        </Button>
-      </div>
-    </>
-  );
-}
+void InfoCard;
+
 export function ProblemSetPage() {
   const userId = getAuthSession()?.userId ?? null;
   const academyState = useAcademyState(userId);
   const academy = getStoredAcademy(userId ?? undefined);
   const [data, setData] = useState<ProblemSetResponse>(emptyProblemSet);
+  const [setInfo, setSetInfo] = useState({
+    school: "",
+    grade: "",
+    subject: "",
+    exam: "",
+  });
   const [stage, setStage] = useState<ProblemSetStage>("source");
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [uploading, setUploading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const { currentQuestionIndex, setCurrentQuestionIndex } = useReviewState();
+  const {
+    uploading,
+    setUploading,
+    sourceMode,
+    setSourceMode,
+    examYear,
+    setExamYear,
+    semester,
+    setSemester,
+    examType,
+    setExamType,
+    pastExam,
+    setPastExam,
+    analyzingPastExam,
+    setAnalyzingPastExam,
+    selectedFileName,
+    setSelectedFileName,
+    uploadFailed,
+    setUploadFailed,
+  } = useSourceState();
+  const { generating, setGenerating, progress, setProgress } =
+    useGenerationState();
   const [error, setError] = useState<string | null>(null);
+  const acceptingQuestion = useRef(false);
 
-  const upload = async (file: File) => {
+  const updateSetInfo = (
+    key: "school" | "grade" | "subject" | "exam",
+    value: string,
+  ) => {
+    setSetInfo((current) => {
+      const next = { ...current, [key]: value };
+      const title = buildProblemSetName(
+        next.school,
+        next.grade,
+        next.subject,
+        next.exam,
+      );
+      setData((dataCurrent) => ({
+        ...dataCurrent,
+        ...next,
+        title,
+      }));
+      return next;
+    });
+  };
+
+  const acceptCurrentQuestion = async () => {
+    const question = data.questions[currentQuestionIndex];
+    if (
+      !question ||
+      question.reviewStatus === "ACCEPTED" ||
+      acceptingQuestion.current
+    )
+      return;
+    acceptingQuestion.current = true;
+    try {
+      const updated = await acceptProblem(Number(question.id), {
+        reviewStatus: "ACCEPTED",
+      });
+      setData((current) => ({
+        ...current,
+        questions: current.questions.map((item) =>
+          item.id === question.id
+            ? { ...item, reviewStatus: updated.reviewStatus ?? "ACCEPTED" }
+            : item,
+        ),
+      }));
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "문항 채택에 실패했습니다.",
+      );
+    } finally {
+      acceptingQuestion.current = false;
+    }
+  };
+
+  const regenerateCurrentQuestion = async () => {
+    const question = data.questions[currentQuestionIndex];
+    if (!question) return;
+    try {
+      const updated = await regenerateReviewedProblem(Number(question.id));
+      setData((current) => ({
+        ...current,
+        questions: current.questions.map((item) =>
+          item.id === question.id
+            ? problemResponseToQuestion(updated, currentQuestionIndex)
+            : item,
+        ),
+      }));
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "문항 재생성에 실패했습니다.",
+      );
+    }
+  };
+
+  const uploadSingle = async (file: File) => {
     setError(null);
+    setSelectedFileName(file.name);
+    setUploadFailed(false);
     setUploading(true);
     try {
       const workspaceId = requireWorkspaceId();
-      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      if (
+        file.type !== "application/pdf" &&
+        !file.name.toLowerCase().endsWith(".pdf")
+      ) {
         throw new Error("PDF 파일만 업로드할 수 있습니다.");
       }
-      const material = await uploadMaterialPdf(workspaceId, file);
+      const material = await uploadMaterialWorkflow(workspaceId, file);
       setData((current) => ({
         ...current,
         id: String(material.id),
         materialId: material.id,
-        files: [{
-          id: String(material.id),
-          name: material.originalFilename ?? file.name,
-          meta: `${material.status}${material.pageCount ? ` · ${material.pageCount}쪽` : ""}`,
-        }],
+        files: [
+          ...current.files.filter((item) => item.id !== String(material.id)),
+          {
+            id: String(material.id),
+            name: material.originalFilename ?? file.name,
+            meta: `${material.status}${material.pageCount ? ` · ${material.pageCount}쪽` : ""}`,
+          },
+        ],
       }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다.");
+      setUploadFailed(true);
+      setError(
+        cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다.",
+      );
     } finally {
       setUploading(false);
+    }
+  };
+
+  const upload = async (files: File[]) => {
+    await Promise.all(files.map((file) => uploadSingle(file)));
+  };
+
+  const uploadPastExamFile = async (file: File) => {
+    setError(null);
+    setSelectedFileName(file.name);
+    setUploadFailed(false);
+    setUploading(true);
+    try {
+      const workspaceId = requireWorkspaceId();
+      setPastExam(null);
+      setData((current) => ({ ...current, materialId: undefined, files: [] }));
+      if (
+        file.type !== "application/pdf" &&
+        !file.name.toLowerCase().endsWith(".pdf")
+      ) {
+        throw new Error("기출은 PDF 파일만 업로드할 수 있습니다.");
+      }
+      if (file.size > 30 * 1024 * 1024) {
+        throw new Error("PDF 파일은 최대 30MB까지 업로드할 수 있습니다.");
+      }
+      const uploaded = await uploadPastExamWorkflow(
+        workspaceId,
+        file,
+        examYear,
+        semester,
+        examType,
+      );
+      setPastExam(uploaded);
+      setData((current) => ({
+        ...current,
+        id: String(uploaded.id),
+        files: [
+          {
+            id: String(uploaded.id),
+            name: uploaded.originalFilename ?? file.name,
+            meta: uploaded.status,
+          },
+        ],
+      }));
+    } catch (cause) {
+      setUploadFailed(true);
+      setError(
+        cause instanceof Error ? cause.message : "기출 업로드에 실패했습니다.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = (fileId: string) => {
+    setData((current) => ({
+      ...current,
+      files: current.files.filter((file) => file.id !== fileId),
+      ...(current.materialId !== undefined &&
+      String(current.materialId) === fileId
+        ? { materialId: undefined }
+        : {}),
+    }));
+    if (pastExam && String(pastExam.id) === fileId) setPastExam(null);
+    setSelectedFileName(null);
+    setUploadFailed(false);
+  };
+
+  const analyzePastExamFlow = async () => {
+    if (!pastExam || analyzingPastExam) return;
+    setError(null);
+    setAnalyzingPastExam(true);
+    try {
+      const started = await analyzePastExam(pastExam.id);
+      setPastExam(started);
+      const completed = await waitForPastExamExtractionWorkflow(
+        pastExam.id,
+        (status) => {
+          setPastExam((current) =>
+            current ? { ...current, status } : current,
+          );
+        },
+      );
+      setPastExam(completed);
+      if (completed.status === "FAILED") {
+        throw new Error(completed.failureReason ?? "기출 분석에 실패했습니다.");
+      }
+      const extraction = await getPastExamQuestions(pastExam.id);
+      setData((current) => ({
+        ...current,
+        passage: extraction.passages[0]?.text ?? "",
+        files: current.files.map((file) => ({
+          ...file,
+          meta: `${completed.status} · ${extraction.issueCount}개 이슈`,
+        })),
+      }));
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "기출 분석에 실패했습니다.",
+      );
+    } finally {
+      setAnalyzingPastExam(false);
     }
   };
 
@@ -731,23 +667,27 @@ export function ProblemSetPage() {
         throw new Error("먼저 PDF 파일을 업로드해 주세요.");
       }
 
-      const material = await waitForMaterialSplit(data.materialId);
+      const material = await waitForMaterialSplitWorkflow(data.materialId);
       if (material.status === "FAILED") {
-        throw new Error(material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.");
+        throw new Error(
+          material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.",
+        );
       }
       const passages = await getMaterialPassages(data.materialId);
       if (passages.length === 0) {
         throw new Error("생성에 사용할 지문이 없습니다.");
       }
-      const profile = await getConfirmedProfile(workspaceId);
+      const profile = await resolveConfirmedProfile(workspaceId);
       const job = await createGenerationJob(
         workspaceId,
         profile.id,
         passages.map((passage) => passage.id),
       );
-      const completedJob = await waitForGeneration(job.id, setProgress);
+      const completedJob = await waitForGenerationWorkflow(job.id, setProgress);
       if (completedJob.status === "FAILED") {
-        throw new Error(completedJob.failureReason ?? "문제 생성에 실패했습니다.");
+        throw new Error(
+          completedJob.failureReason ?? "문제 생성에 실패했습니다.",
+        );
       }
       const problems = await getGeneratedProblems(job.id);
       if (problems.length === 0) {
@@ -757,12 +697,14 @@ export function ProblemSetPage() {
         ...current,
         generationJobId: job.id,
         passage: passages[0]?.content ?? "",
-        questions: problems.map(problemResponseToQuestion),
+        questions: problems.map(toProblemQuestion),
       }));
       setCurrentQuestionIndex(0);
       setStage("review");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "문제 생성에 실패했습니다.");
+      setError(
+        cause instanceof Error ? cause.message : "문제 생성에 실패했습니다.",
+      );
     } finally {
       setGenerating(false);
     }
@@ -771,7 +713,7 @@ export function ProblemSetPage() {
   const download = async (answer: boolean) => {
     if (data.worksheetId === undefined) return;
     try {
-      const blob = await downloadWorksheetPdf(data.worksheetId, answer);
+      const blob = await downloadProblemWorksheet(data.worksheetId, answer);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -779,11 +721,14 @@ export function ProblemSetPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "PDF 다운로드에 실패했습니다.");
+      setError(
+        cause instanceof Error ? cause.message : "PDF 다운로드에 실패했습니다.",
+      );
     }
   };
 
   const nextQuestion = async () => {
+    await acceptCurrentQuestion();
     if (currentQuestionIndex !== data.questions.length - 1) {
       setCurrentQuestionIndex((index) => index + 1);
       return;
@@ -792,7 +737,8 @@ export function ProblemSetPage() {
     try {
       const workspaceId = requireWorkspaceId();
       const accepted = await getAcceptedProblems(workspaceId);
-      if (accepted.length === 0) throw new Error("채택된 문항이 없어 시험지를 만들 수 없습니다.");
+      if (accepted.length === 0)
+        throw new Error("채택된 문항이 없어 시험지를 만들 수 없습니다.");
       const worksheet = await createWorksheet(workspaceId, {
         title: data.title || "문제 세트",
         problemIds: accepted.map((problem) => problem.id),
@@ -803,7 +749,9 @@ export function ProblemSetPage() {
       setData((current) => ({ ...current, worksheetId: worksheet.id }));
       setStage("output");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "시험지를 만들지 못했습니다.");
+      setError(
+        cause instanceof Error ? cause.message : "시험지를 만들지 못했습니다.",
+      );
     }
   };
   return (
@@ -813,15 +761,52 @@ export function ProblemSetPage() {
         <Stepper stage={stage} />
         {error && <div className="privacy-note">{error}</div>}
         {stage === "source" && (
-          <Source
+          <SourceStage
             data={data}
             uploading={uploading}
-            onUpload={upload}
-            next={() => setStage("generation")}
+            onUpload={
+              sourceMode === "past-exam"
+                ? (files) => uploadPastExamFile(files[0])
+                : upload
+            }
+            next={() => {
+              if (sourceMode === "material") {
+                if (!data.materialId) {
+                  setError("자료를 먼저 업로드해 주세요.");
+                  return;
+                }
+                if (!data.title) {
+                  setError("학교, 학년, 과목, 시험을 모두 선택해 주세요.");
+                  return;
+                }
+                setStage("generation");
+              } else if (pastExam?.status !== "EXTRACTED") {
+                setError("기출 분석이 완료되지 않았습니다.");
+              }
+            }}
+            sourceMode={sourceMode}
+            onSourceModeChange={(mode) => {
+              setSourceMode(mode);
+              setError(null);
+            }}
+            examYear={examYear}
+            semester={semester}
+            examType={examType}
+            onExamYearChange={setExamYear}
+            onSemesterChange={setSemester}
+            onExamTypeChange={setExamType}
+            onAnalyzePastExam={analyzePastExamFlow}
+            pastExam={pastExam}
+            analyzingPastExam={analyzingPastExam}
+            selectedFileName={selectedFileName}
+            uploadFailed={uploadFailed}
+            setInfo={setInfo}
+            onSetInfoChange={updateSetInfo}
+            onRemoveFile={removeFile}
           />
         )}
         {stage === "generation" && (
-          <Generation
+          <GenerationStage
             data={data}
             back={() => setStage("source")}
             onGenerate={generate}
@@ -830,14 +815,16 @@ export function ProblemSetPage() {
           />
         )}
         {stage === "review" && (
-          <Review
+          <ReviewStage
             data={data}
             index={currentQuestionIndex}
             next={nextQuestion}
+            onAccept={acceptCurrentQuestion}
+            onRegenerate={regenerateCurrentQuestion}
           />
         )}
         {stage === "output" && (
-          <Output
+          <OutputStage
             data={data}
             academy={academy}
             academyLoading={academyState.status === "loading"}

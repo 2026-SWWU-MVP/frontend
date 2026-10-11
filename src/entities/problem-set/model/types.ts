@@ -16,6 +16,7 @@ export interface ProblemQuestion {
   choices: ProblemChoice[]
   answerText?: string
   explanation?: string
+  reviewStatus?: 'DRAFT' | 'ACCEPTED' | 'REJECTED'
 }
 
 export interface ProblemSetResponse {
@@ -31,8 +32,18 @@ export interface ProblemSetResponse {
   grade: string
   subject: string
   area: string
+  scope?: string
   exam: string
-  scope: string
   passage: string
-  prompt: string
+  prompt?: string
+}
+
+export function buildProblemSetName(
+  school: string,
+  grade: string,
+  subject: string,
+  exam: string,
+) {
+  if (!school || !grade || !subject || !exam) return ""
+  return `${school}_${grade}학년_${subject}_${exam}`
 }

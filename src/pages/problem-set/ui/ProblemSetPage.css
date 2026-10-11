@@ -144,6 +144,18 @@
 .source-tabs strong {
   color: var(--color-action-primary);
 }
+.source-tabs button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.source-tabs button.is-active {
+  color: var(--color-action-primary);
+  font-weight: var(--font-weight-bold);
+}
 .upload-box {
   display: grid;
   justify-items: center;
@@ -209,6 +221,10 @@
   font-style: normal;
   font-weight: 700;
 }
+.set-file em.is-failed {
+  color: var(--color-status-review-foreground);
+  background: var(--color-status-review-background);
+}
 .passage-block {
   display: grid;
   gap: 10px;
@@ -245,6 +261,18 @@
   background: var(--color-surface-neutral);
   font-size: 11px;
 }
+.source-analysis-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-12);
+}
+.source-analysis-status .button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 var(--spacing-12);
+  font-size: var(--font-size-11);
+}
 .info-card {
   display: grid;
   gap: 22px;
@@ -269,7 +297,8 @@
   color: var(--color-text-secondary);
 }
 .set-field input,
-.set-field textarea {
+.set-field textarea,
+.set-field select {
   width: 100%;
   border: 1px solid var(--color-border-default);
   border-radius: 8px;
@@ -280,8 +309,12 @@
   font-size: 12px;
   line-height: 1.7;
 }
-.set-field input {
+.set-field input,
+.set-field select {
   height: 44px;
+}
+.set-field select {
+  appearance: auto;
 }
 .set-field textarea {
   min-height: 112px;
@@ -295,6 +328,9 @@
 .field-grid.three {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+}
+.source-main > .field-grid.three:not(.clean-past-exam-fields) {
+  display: none;
 }
 .set-actions {
   display: flex;
