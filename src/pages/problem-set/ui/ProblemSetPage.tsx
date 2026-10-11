@@ -22,6 +22,9 @@ import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import { requireWorkspaceId } from "@/shared/auth/workspace";
+import { getAuthSession } from "@/shared/auth/session";
+import { formatAcademyCreatedAt, getAcademyPlanLabel, getStoredAcademy } from "@/shared/academy/academy";
+import { useAcademyState } from "@/shared/academy/state";
 import "./ProblemSetPage.css";
 
 const stages: Array<{ id: ProblemSetStage; label: string }> = [
@@ -535,11 +538,15 @@ function Review({
 }
 function Output({
   data,
+  academy,
+  academyLoading,
   restart,
   worksheetId,
   onDownload,
 }: {
   data: ProblemSetResponse;
+  academy: ReturnType<typeof getStoredAcademy>;
+  academyLoading: boolean;
   restart: () => void;
   worksheetId?: number;
   onDownload: (answer: boolean) => void;
@@ -561,7 +568,7 @@ function Output({
           </div>
           <div className="paper">
             <div className="paper-top">
-              <strong>솔샘학원</strong>
+              <strong>{academy?.name ?? (academyLoading ? "학원 정보 로딩 중" : "학원 정보 없음")}</strong>
               <small>
                 {data.school} · {data.grade} · {data.area}
               </small>
@@ -584,7 +591,7 @@ function Output({
               </div>
             ))}
             <footer>
-              솔샘학원 · 수업용 데모 자료 / 무단 배포 금지 <b>1</b>
+              {academy?.name ?? "학원 정보 없음"} · 수업용 데모 자료 / 무단 배포 금지 <b>1</b>
             </footer>
           </div>
         </section>
@@ -630,8 +637,20 @@ function Output({
             <h2>학원 브랜딩·편집 설정</h2>
             <label className="set-field full">
               <strong>학원 표시명</strong>
-              <input value="솔샘학원" readOnly />
+              <input value={academy?.name ?? ""} placeholder={academyLoading ? "학원 정보 로딩 중" : "학원 정보 없음"} readOnly />
             </label>
+            <div className="academy-branding-summary">
+              <strong>{academy ? getAcademyPlanLabel(academy.plan) : "-"}</strong>
+              <span>{academy ? `${academy.teacherCount ?? "-"} / ${academy.maxTeachers ?? "-"}명` : "강사 수 정보 없음"}</span>
+              <span>{academy ? `생성일 ${formatAcademyCreatedAt(academy.createdAt)}` : "생성일 정보 없음"}</span>
+              <span>
+                {academy?.hasLogo
+                  ? academy.logoWidth != null && academy.logoHeight != null
+                    ? `등록 로고 · ${academy.logoWidth} × ${academy.logoHeight}px`
+                    : "등록 로고 · 크기 정보 없음"
+                  : "기본 로고 · 학원명 표시"}
+              </span>
+            </div>
             <div className="field-grid">
               <SelectField label="용지" value="A4 · 세로" />
               <SelectField label="단 구성" value="1단" />
@@ -664,6 +683,9 @@ function Output({
   );
 }
 export function ProblemSetPage() {
+  const userId = getAuthSession()?.userId ?? null;
+  const academyState = useAcademyState(userId);
+  const academy = getStoredAcademy(userId ?? undefined);
   const [data, setData] = useState<ProblemSetResponse>(emptyProblemSet);
   const [stage, setStage] = useState<ProblemSetStage>("source");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -817,6 +839,8 @@ export function ProblemSetPage() {
         {stage === "output" && (
           <Output
             data={data}
+            academy={academy}
+            academyLoading={academyState.status === "loading"}
             worksheetId={data.worksheetId}
             onDownload={download}
             restart={() => {
