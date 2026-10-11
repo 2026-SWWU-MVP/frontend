@@ -1,12 +1,13 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type { Repository } from '@/shared/api/types'
 
-import type { WorkspaceResponse } from '@/entities/workspace/model/types'
+import type { WorkspaceOption, WorkspaceResponse } from '@/entities/workspace/model/types'
+import { getWorkspaceId, setWorkspaceId } from '@/shared/auth/workspace'
 
 interface WorkspaceApiResponse {
   id: number
-  schoolId?: number
-  schoolName?: string
+  title?: string
+  school?: { id: number; name: string }
   grade?: string | number
   summary?: {
     pastExamCount?: number
@@ -40,13 +41,19 @@ function formatProfileStatus(status?: string) {
   return status
 }
 
-function mapWorkspace(workspace: WorkspaceApiResponse): WorkspaceResponse {
+function workspaceTitle(workspace: WorkspaceApiResponse) {
+  if (workspace.title) return workspace.title
+  const school = workspace.school?.name ?? '학교 미지정'
+  return workspace.grade === undefined ? school : `${school} · ${workspace.grade}학년`
+}
+
+function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[]): WorkspaceResponse {
   const summary = workspace.summary ?? {}
-  const school = workspace.schoolName ?? '학교 미지정'
-  const grade = workspace.grade === undefined ? '' : `${workspace.grade}학년`
   const latestTitle = summary.latestWorksheet?.title
   return {
-    title: `${school}${grade ? ` · ${grade}` : ''}`,
+    id: workspace.id,
+    options,
+    title: workspaceTitle(workspace),
     description: '워크스페이스의 실제 자료와 출제 프로필 현황입니다.',
     primaryActionLabel: '새 문제 세트 만들기',
     preparation: {
@@ -72,6 +79,9 @@ export const workspaceRepository: Repository<void, WorkspaceResponse> = {
   async execute() {
     const response = await httpClient.request<WorkspaceApiResponse[]>({ path: '/api/workspaces' })
     if (response.length === 0) throw new Error('등록된 워크스페이스가 없습니다.')
-    return mapWorkspace(response[0])
+    // 고른 워크스페이스가 목록에 없으면(처음 로그인 등) 첫 번째를 고른다
+    const selected = response.find((workspace) => workspace.id === getWorkspaceId()) ?? response[0]
+    setWorkspaceId(selected.id)
+    return mapWorkspace(selected, response.map((workspace) => ({ id: workspace.id, title: workspaceTitle(workspace) })))
   },
 }

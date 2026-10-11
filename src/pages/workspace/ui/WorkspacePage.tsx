@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { workspaceRepository } from '@/entities/workspace/api/repository'
 import type { WorkspaceResponse } from '@/entities/workspace/model/types'
+import { setWorkspaceId } from '@/shared/auth/workspace'
 import { PageContainer } from '@/shared/ui/PageContainer/PageContainer'
 import { ExamInsight } from '@/widgets/exam-insight/ui/ExamInsight'
 import { RecentQuestionSets } from '@/widgets/recent-question-sets/ui/RecentQuestionSets'
@@ -14,6 +15,7 @@ import './WorkspacePage.css'
 export function WorkspacePage() {
   const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -30,7 +32,12 @@ export function WorkspacePage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [reloadKey])
+
+  function selectWorkspace(workspaceId: number) {
+    setWorkspaceId(workspaceId)
+    setReloadKey((key) => key + 1)
+  }
 
   if (error) {
     return <PageContainer><p className="workspace-page__message">{error}</p></PageContainer>
@@ -42,6 +49,16 @@ export function WorkspacePage() {
 
   return (
     <PageContainer>
+      {workspace.options.length > 1 && (
+        <label className="workspace-page__select">
+          <span>워크스페이스</span>
+          <select value={workspace.id} onChange={(event) => selectWorkspace(Number(event.target.value))}>
+            {workspace.options.map((option) => (
+              <option key={option.id} value={option.id}>{option.title}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <WorkspaceOverview
         description={workspace.description}
         preparation={workspace.preparation}

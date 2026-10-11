@@ -1,15 +1,20 @@
-import { getStoredAcademyId } from './session'
+import { selectedWorkspaceStorageKey } from './session'
 
 export class MissingWorkspaceIdError extends Error {
   constructor() {
-    super('워크스페이스 ID가 없어 API 요청을 보낼 수 없습니다.')
+    super('워크스페이스 ID가 없어 API 요청을 보낼 수 없습니다. 워크스페이스 화면에서 워크스페이스를 먼저 선택해 주세요.')
     this.name = 'MissingWorkspaceIdError'
   }
 }
 
-/** The current backend maps academyId to workspaceId. */
+/** 워크스페이스 화면에서 고른 워크스페이스 ID (학교 + 학년 단위, 학원 ID와 다름) */
 export function getWorkspaceId(): number | null {
-  return getStoredAcademyId()
+  const stored = Number(sessionStorage.getItem(selectedWorkspaceStorageKey))
+  return Number.isInteger(stored) && stored > 0 ? stored : null
+}
+
+export function setWorkspaceId(workspaceId: number) {
+  sessionStorage.setItem(selectedWorkspaceStorageKey, String(workspaceId))
 }
 
 export function requireWorkspaceId(): number {

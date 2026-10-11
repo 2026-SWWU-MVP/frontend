@@ -35,7 +35,14 @@ export interface InsightMetric {
   percentage: number;
 }
 
+export interface WorkspaceOption {
+  id: number;
+  title: string;
+}
+
 export interface WorkspaceResponse {
+  id: number;
+  options: WorkspaceOption[];
   title: string;
   description: string;
   primaryActionLabel: string;
