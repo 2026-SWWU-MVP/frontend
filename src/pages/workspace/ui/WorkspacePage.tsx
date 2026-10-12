@@ -52,6 +52,16 @@ export function WorkspacePage() {
 
   return (
     <PageContainer>
+      {workspace.options.length > 1 && (
+        <label className="workspace-page__select">
+          <span>워크스페이스</span>
+          <select value={workspace.id} onChange={(event) => selectWorkspace(Number(event.target.value))}>
+            {workspace.options.map((option) => (
+              <option key={option.id} value={option.id}>{option.title}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <WorkspaceOverview
         description={workspace.description}
         preparation={workspace.preparation}
