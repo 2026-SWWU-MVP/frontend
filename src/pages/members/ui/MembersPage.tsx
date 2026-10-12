@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { getAuthSession } from "@/shared/auth/session";
 import { Badge } from "@/shared/ui/Badge/Badge";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
@@ -66,6 +67,8 @@ const members: Member[] = [
 ];
 
 export function MembersPage() {
+  const session = getAuthSession();
+
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"전체 권한" | MemberRole>("전체 권한");
   const [sortAscending, setSortAscending] = useState(true);
@@ -73,7 +76,22 @@ export function MembersPage() {
 
   const filteredMembers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return members
+
+    // 첫 번째 멤버를 로그인한 원장의 정보로 표시
+    const displayMembers = members.map((member, index) =>
+      index === 0
+        ? {
+            ...member,
+            name: session?.name
+              ? `${session.name}${session.name.endsWith("선생님") ? "" : " 선생님"}`
+              : member.name,
+            initials: session?.name?.slice(0, 2) ?? member.initials,
+            isCurrentUser: true,
+          }
+        : member,
+    );
+
+    return displayMembers
       .filter((member) => role === "전체 권한" || member.role === role)
       .filter(
         (member) =>
@@ -87,7 +105,7 @@ export function MembersPage() {
           ? a.name.localeCompare(b.name, "ko")
           : b.name.localeCompare(a.name, "ko"),
       );
-  }, [query, role, sortAscending]);
+  }, [query, role, sortAscending, session?.name]);
 
   return (
     <PageContainer>
@@ -99,12 +117,14 @@ export function MembersPage() {
               함께 수업을 준비하는 강사를 초대하고, 팀의 접근 권한을 관리하세요.
             </p>
           </div>
+
           <Button
             className="members-page__invite"
             variant="primary"
             type="button"
           >
-            <Icon name="plus" size={16} tone="accent" /> 강사 초대 코드 발급
+            <Icon name="plus" size={16} tone="accent" />
+            강사 초대 코드 발급
           </Button>
         </div>
 
@@ -115,6 +135,7 @@ export function MembersPage() {
           <span className="members-page__banner-icon">
             <Icon name="users" size={22} tone="accent" />
           </span>
+
           <div>
             <strong>초대 코드 하나로, 선생님과 함께 준비하세요</strong>
             <p>
@@ -122,14 +143,16 @@ export function MembersPage() {
               코드는 7일 동안 유효합니다.
             </p>
           </div>
+
           <span className="members-page__banner-note">관리자만 발급 가능</span>
         </section>
 
         <section className="members-page__members-card">
           <div className="members-page__card-header">
             <h2>
-              강사 목록 <Badge tone="accent">{members.length}명</Badge>
+              강사 목록 <Badge tone="accent">{filteredMembers.length}명</Badge>
             </h2>
+
             <div className="members-page__filters">
               <label className="members-page__search">
                 <Icon name="search" size={18} />
@@ -142,6 +165,7 @@ export function MembersPage() {
                   placeholder="강사 이름 또는 이메일 검색"
                 />
               </label>
+
               <select
                 value={role}
                 onChange={(event) => {
@@ -179,16 +203,20 @@ export function MembersPage() {
                   <th>관리</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredMembers.map((member) => (
                   <tr key={member.id}>
                     <td>
                       <div className="members-page__member">
                         <span
-                          className={`members-page__avatar ${member.isCurrentUser ? "is-accent" : ""}`}
+                          className={`members-page__avatar ${
+                            member.isCurrentUser ? "is-accent" : ""
+                          }`}
                         >
                           {member.initials}
                         </span>
+
                         <span>
                           <strong>{member.name}</strong>
                           {member.isCurrentUser && <small>나</small>}
@@ -196,6 +224,7 @@ export function MembersPage() {
                         </span>
                       </div>
                     </td>
+
                     <td>
                       <Badge
                         tone={member.role === "관리자" ? "accent" : "neutral"}
@@ -203,27 +232,41 @@ export function MembersPage() {
                         {member.role}
                       </Badge>
                     </td>
+
                     <td>{member.subject}</td>
                     <td>{member.joinedAt}</td>
                     <td>{member.lastActive}</td>
+
                     <td>
                       <button
-                        className={`members-page__manage ${member.isCurrentUser ? "is-current" : ""}`}
+                        className={`members-page__manage ${
+                          member.isCurrentUser ? "is-current" : ""
+                        }`}
                         type="button"
+                        disabled={member.isCurrentUser}
                       >
                         {member.isCurrentUser ? "내 계정" : "내보내기"}
                       </button>
                     </td>
                   </tr>
                 ))}
+
+                {filteredMembers.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="members-page__empty">
+                      검색 결과가 없습니다.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+
           <div className="members-page__table-footer">
             <span>
               전체 {filteredMembers.length}명 중{" "}
-              {filteredMembers.length ? "1-" + filteredMembers.length : "0"}명
-              표시
+              {filteredMembers.length > 0 ? `1-${filteredMembers.length}` : "0"}
+              명 표시
             </span>
             <span>관리자는 본인을 내보낼 수 없습니다.</span>
           </div>
@@ -232,22 +275,26 @@ export function MembersPage() {
         <div className="members-page__bottom-grid">
           <section className="members-page__info-card">
             <h2>권한별로 할 수 있는 일</h2>
+
             <p>
               <Badge tone="accent">관리자</Badge>
               <span>
                 문제 세트 제작·검토, 강사 초대·내보내기, 워크스페이스 설정
               </span>
             </p>
+
             <p>
               <Badge tone="neutral">강사</Badge>
               <span>팀 자료 조회, 문제 세트 제작·공동 검토, 시험 후 리뷰</span>
             </p>
           </section>
+
           <section className="members-page__info-card members-page__code-card">
             <div className="members-page__code-heading">
               <h2>초대 코드</h2>
               <Icon name="layers" size={20} />
             </div>
+
             <strong>현재 유효한 초대 코드가 없어요</strong>
             <p>
               새 코드를 발급해 강사에게 전달하세요. 참여 시 강사 권한이 자동으로
@@ -260,13 +307,15 @@ export function MembersPage() {
           <button
             type="button"
             disabled={page === 1}
-            onClick={() => setPage(1)}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
           >
             ‹
           </button>
+
           <button className="is-active" type="button">
-            1
+            {page}
           </button>
+
           <button type="button" disabled>
             ›
           </button>
