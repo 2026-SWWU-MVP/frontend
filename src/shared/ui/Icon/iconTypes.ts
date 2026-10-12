@@ -14,6 +14,12 @@ export const iconNames = [
   "bell",
   "plus",
   "layers",
+  "x",
+  "lock-keyhole",
+  "check",
+  "link",
+  "copy",
+  "alert-circle",
 ] as const;
 
 export type IconName = (typeof iconNames)[number];

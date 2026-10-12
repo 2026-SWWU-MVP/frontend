@@ -2,7 +2,10 @@ import { NavLink } from "react-router-dom";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import type { IconName } from "@/shared/ui/Icon/iconTypes";
 import { getAuthSession } from "@/shared/auth/session";
-import { getAcademyPlanLabel, getStoredAcademy } from "@/shared/academy/academy";
+import {
+  getAcademyPlanLabel,
+  getStoredAcademy,
+} from "@/shared/academy/academy";
 import { useAcademyState } from "@/shared/academy/state";
 import "./Sidebar.css";
 
@@ -55,9 +58,20 @@ export function Sidebar() {
   const userId = session?.userId ?? null;
   const academyState = useAcademyState(userId);
   const academy = getStoredAcademy(userId ?? undefined);
-  const workspaceName = academy?.name ?? (academyState.status === "loading" ? "학원 정보 로딩 중" : "학원 정보 없음");
+  const workspaceName =
+    academy?.name ??
+    (academyState.status === "loading"
+      ? "학원 정보 로딩 중"
+      : "학원 정보 없음");
   const userName = session?.name ?? "선생님 정보 없음";
-  const userRole = session?.role === "OWNER" ? "원장" : session?.role === "TEACHER" ? "선생님" : session?.role === "STUDENT" ? "학생" : "역할 정보 없음";
+  const userRole =
+    session?.role === "OWNER"
+      ? "원장"
+      : session?.role === "TEACHER"
+        ? "선생님"
+        : session?.role === "STUDENT"
+          ? "학생"
+          : "역할 정보 없음";
 
   return (
     <aside className="sidebar">
@@ -74,7 +88,11 @@ export function Sidebar() {
 
           <span className="sidebar__workspace-copy">
             <strong>{workspaceName}</strong>
-            <small>{academy ? `${academy.teacherCount ?? "-"} / ${academy.maxTeachers ?? "-"}명 · ${getAcademyPlanLabel(academy.plan)}` : "강사 수 정보 없음"}</small>
+            <small>
+              {academy
+                ? `${academy.teacherCount ?? "-"} / ${academy.maxTeachers ?? "-"}명 · ${getAcademyPlanLabel(academy.plan)}`
+                : "강사 수 정보 없음"}
+            </small>
           </span>
 
           {/* <Icon name="chevrons-up-down" size={14} /> */}
@@ -86,16 +104,20 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="sidebar__divider" />
+        {session?.role === "OWNER" && (
+          <>
+            <div className="sidebar__divider" />
 
-        <nav
-          aria-label="워크스페이스 메뉴"
-          className="sidebar__secondary-navigation"
-        >
-          {secondaryNavigation.map((item) => (
-            <NavigationItemView item={item} key={item.label} />
-          ))}
-        </nav>
+            <nav
+              aria-label="워크스페이스 메뉴"
+              className="sidebar__secondary-navigation"
+            >
+              {secondaryNavigation.map((item) => (
+                <NavigationItemView item={item} key={item.label} />
+              ))}
+            </nav>
+          </>
+        )}
       </div>
 
       <div className="sidebar__footer">

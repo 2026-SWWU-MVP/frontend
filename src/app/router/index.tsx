@@ -10,6 +10,7 @@ import { AppShell } from "@/widgets/app-shell/ui/AppShell";
 import { LandingPage } from "@/pages/landing/ui/LandingPage";
 import { AuthPage } from "@/pages/auth/ui/AuthPage";
 import { AcademyPage } from "@/pages/academy/ui/AcademyPage";
+import { MembersPage } from "@/pages/members/ui/MembersPage";
 import { RequireAuth } from '@/app/router/RequireAuth'
 
 export const router = createBrowserRouter([
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
           { path: "/school-trends", element: <SchoolTrendsPage /> },
           { path: "/reports", element: <ReportsPage /> },
           { path: "/reviews", element: <ReviewsPage /> },
-          { path: "/members", element: <PlaceholderPage /> },
+          { path: "/members", element: <MembersPage /> },
           { path: "/settings", element: <PlaceholderPage /> },
           { path: "*", element: <PlaceholderPage /> },
         ],
