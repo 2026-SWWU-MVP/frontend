@@ -111,6 +111,42 @@ function getIconContent(name: IconName): ReactNode {
           <path d="m3 12 9 5 9-5M3 17l9 5 9-5" />
         </>
       );
+    case "lock-keyhole":
+      return (
+        <>
+          <rect x="4" y="10" width="16" height="11" rx="2" />
+          <path d="M8 10V7a4 4 0 1 1 8 0v3" />
+          <circle cx="12" cy="15" r="1" />
+          <path d="M12 16v2" />
+        </>
+      );
+
+    case "check":
+      return <path d="m5 12 4 4L19 6" />;
+
+    case "link":
+      return (
+        <>
+          <path d="M10 13a5 5 0 0 0 7.07 0l3-3A5 5 0 0 0 13 2.93l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 11 21.07l1.71-1.71" />
+        </>
+      );
+
+    case "copy":
+      return (
+        <>
+          <rect x="8" y="8" width="13" height="13" rx="2" />
+          <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+        </>
+      );
+    case "alert-circle":
+      return (
+        <>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
+        </>
+      );
   }
 }
 

@@ -7,6 +7,8 @@ import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 
 import "./MembersPage.css";
+import { InviteCodeModal } from "./InviteCodeModal";
+import { RemoveMemberModal, type MemberForModal } from "./RemoveMemberModal";
 
 type MemberRole = "관리자" | "강사";
 
@@ -74,6 +76,11 @@ export function MembersPage() {
   const [sortAscending, setSortAscending] = useState(true);
   const [page, setPage] = useState(1);
 
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<MemberForModal | null>(
+    null,
+  );
+
   const filteredMembers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -122,6 +129,7 @@ export function MembersPage() {
             className="members-page__invite"
             variant="primary"
             type="button"
+            onClick={() => setIsInviteModalOpen(true)}
           >
             <Icon name="plus" size={16} tone="accent" />
             강사 초대 코드 발급
@@ -244,6 +252,17 @@ export function MembersPage() {
                         }`}
                         type="button"
                         disabled={member.isCurrentUser}
+                        onClick={() => {
+                          if (member.isCurrentUser) return;
+
+                          setMemberToRemove({
+                            id: member.id,
+                            initials: member.initials,
+                            name: member.name,
+                            email: member.email,
+                            role: member.role,
+                          });
+                        }}
                       >
                         {member.isCurrentUser ? "내 계정" : "내보내기"}
                       </button>
@@ -321,6 +340,21 @@ export function MembersPage() {
           </button>
         </div>
       </div>
+      {isInviteModalOpen && (
+        <InviteCodeModal onClose={() => setIsInviteModalOpen(false)} />
+      )}
+
+      {memberToRemove && (
+        <RemoveMemberModal
+          member={memberToRemove}
+          onClose={() => setMemberToRemove(null)}
+          onConfirm={(member) => {
+            // TODO: 실제 강사 내보내기 API 연결
+            console.log("내보내기 대상:", member.id);
+            setMemberToRemove(null);
+          }}
+        />
+      )}
     </PageContainer>
   );
 }
