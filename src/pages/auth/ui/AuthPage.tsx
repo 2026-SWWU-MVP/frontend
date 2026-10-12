@@ -136,7 +136,7 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
               value={form.loginId}
               onChange={update("loginId")}
               onBlur={verifyLoginId}
-              placeholder="teacher"
+              placeholder="아이디를 입력하세요"
               required
             />
             {loginIdMessage && (
