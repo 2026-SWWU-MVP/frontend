@@ -19,14 +19,13 @@ export function WorkspacePage() {
 
   function selectWorkspace(workspaceId: number) {
     setWorkspaceId(workspaceId);
+    setError(null);
+    setWorkspace(null);
     setReloadKey((key) => key + 1);
   }
 
   useEffect(() => {
     let isMounted = true;
-
-    setError(null);
-    setWorkspace(null);
 
     workspaceRepository
       .execute()
