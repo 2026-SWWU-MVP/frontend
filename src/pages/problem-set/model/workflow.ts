@@ -7,10 +7,10 @@ import {
 import type { ProblemQuestion } from "@/entities/problem-set/model/types";
 
 export const problemSetStages = [
-  { id: "source", label: "?먮즺 ?낅젰" },
-  { id: "generation", label: "AI ?앹꽦" },
-  { id: "review", label: "怨듬룞 寃??" },
-  { id: "output", label: "?뺤젙쨌異쒕젰" },
+  { id: "source", label: "자료 입력" },
+  { id: "generation", label: "AI 생성" },
+  { id: "review", label: "공동 검토" },
+  { id: "output", label: "확정·출력" },
 ] as const;
 
 export function problemResponseToQuestion(
@@ -44,7 +44,7 @@ export async function waitForMaterialSplit(materialId: number) {
     if (material.status === "SPLIT" || material.status === "FAILED") return material;
     await wait(2000);
   }
-  throw new Error("?먮즺 遺꾨━ ?쒓컙??珥덇낵?섏뿀?듬땲??");
+  throw new Error("자료 분리 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
 }
 
 export async function waitForPastExamExtraction(
@@ -57,7 +57,7 @@ export async function waitForPastExamExtraction(
     if (exam.status === "EXTRACTED" || exam.status === "FAILED") return exam;
     await wait(2000);
   }
-  throw new Error("湲곗텧 遺꾩꽍 ?쒓컙??珥덇낵?섏뿀?듬땲??");
+  throw new Error("기출 분석 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
 }
 
 export async function waitForGeneration(
@@ -70,5 +70,5 @@ export async function waitForGeneration(
     if (job.status === "COMPLETED" || job.status === "FAILED") return job;
     await wait(2000);
   }
-  throw new Error("臾몄젣 ?앹꽦 ?쒓컙??珥덇낵?섏뿀?듬땲??");
+  throw new Error("문제 생성 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
 }
