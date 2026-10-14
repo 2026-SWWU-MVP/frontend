@@ -13,7 +13,7 @@ export async function createProblemWorksheet(
   const worksheet = await createWorksheet(workspaceId, {
     title,
     problemIds: accepted.map((problem) => problem.id),
-    headerText: "?섏뾽??臾몄젣吏",
+    headerText: "수업용 문제지",
     showLogo: true,
   });
   await getWorksheet(worksheet.id);
