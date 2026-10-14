@@ -46,6 +46,11 @@ export function createAcademy(name: string) {
   });
 }
 
+/** 내 정보 (학원 소속·역할). 새로고침해도 서버 기준으로 세션을 맞출 때 쓴다 */
+export function getMe() {
+  return httpClient.request<LoginUserResponse>({ path: "/api/me" });
+}
+
 export function joinAcademy(code: string) {
   return httpClient.request<LoginUserResponse>({
     path: "/api/academies/join",

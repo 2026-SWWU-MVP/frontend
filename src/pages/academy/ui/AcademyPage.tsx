@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
 import { createAcademy, joinAcademy } from '@/entities/auth/api/repository'
+import { loadAcademy } from '@/shared/academy/state'
 import { getAuthSession, saveAuthSession } from '@/shared/auth/session'
 
 import './AcademyPage.css'
@@ -22,6 +23,8 @@ export function AcademyPage() {
     try {
       const response = mode === 'create' ? await createAcademy(value) : await joinAcademy(value)
       saveAuthSession(response)
+      // 사이드바·헤더의 학원 정보를 바로 채운다 (실패해도 화면 이동은 막지 않음)
+      await loadAcademy(response.userId, { force: true }).catch(() => undefined)
       navigate('/workspace', { replace: true })
     } catch (cause) { setError(cause instanceof Error ? cause.message : '학원 소속을 처리하지 못했습니다.') } finally { setLoading(false) }
   }
