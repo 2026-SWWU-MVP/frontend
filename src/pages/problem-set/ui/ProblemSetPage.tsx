@@ -3,7 +3,6 @@ import {
   createGenerationJob,
   getGeneratedProblems,
   getGenerationJob,
-  getAcceptedProblems,
   getWorksheet,
   createWorksheet,
   getMaterial,
@@ -727,8 +726,8 @@ export function ProblemSetPage() {
     }
   };
 
+  // 다음 문항으로 넘어가기만 한다 (채택은 채택 버튼으로만)
   const nextQuestion = async () => {
-    await acceptCurrentQuestion();
     if (currentQuestionIndex !== data.questions.length - 1) {
       setCurrentQuestionIndex((index) => index + 1);
       return;
@@ -736,12 +735,17 @@ export function ProblemSetPage() {
     setError(null);
     try {
       const workspaceId = requireWorkspaceId();
-      const accepted = await getAcceptedProblems(workspaceId);
+      // 시험지에는 이번 생성 작업에서 채택한 문항만 넣는다 (워크스페이스 전체 채택 문항 아님)
+      const accepted = data.questions.filter(
+        (question) => question.reviewStatus === "ACCEPTED",
+      );
       if (accepted.length === 0)
-        throw new Error("채택된 문항이 없어 시험지를 만들 수 없습니다.");
+        throw new Error(
+          "채택된 문항이 없어 시험지를 만들 수 없습니다. 시험지에 넣을 문항을 채택해 주세요.",
+        );
       const worksheet = await createWorksheet(workspaceId, {
         title: data.title || "문제 세트",
-        problemIds: accepted.map((problem) => problem.id),
+        problemIds: accepted.map((question) => Number(question.id)),
         headerText: "수업용 문제지",
         showLogo: true,
       });
