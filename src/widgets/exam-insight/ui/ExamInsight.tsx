@@ -6,9 +6,10 @@ import "./ExamInsight.css";
 
 interface ExamInsightProps {
   insight: WorkspaceResponse["insight"];
+  onAction?: () => void;
 }
 
-export function ExamInsight({ insight }: ExamInsightProps) {
+export function ExamInsight({ insight, onAction }: ExamInsightProps) {
   return (
     <section className="workspace-panel exam-insight">
       <header className="workspace-panel__header">
@@ -19,7 +20,9 @@ export function ExamInsight({ insight }: ExamInsightProps) {
         <div className="exam-insight__copy">
           <h3>{insight.headline}</h3>
           <p>{insight.description}</p>
-          <Button variant="text">{insight.actionLabel} →</Button>
+          <Button onClick={onAction} variant="text">
+            {insight.actionLabel} →
+          </Button>
         </div>
         <div className="exam-insight__metrics">
           {insight.metrics.map((metric) => (

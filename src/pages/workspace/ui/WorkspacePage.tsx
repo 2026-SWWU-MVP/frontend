@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { getSchoolTrends } from "@/entities/school-trends/api/repository";
 import { NoWorkspaceError, workspaceRepository } from "@/entities/workspace/api/repository";
 import type { WorkspaceOption, WorkspaceResponse } from "@/entities/workspace/model/types";
 import { setWorkspaceId } from "@/shared/auth/workspace";
@@ -78,10 +79,12 @@ export function WorkspacePage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [insight, setInsight] = useState<WorkspaceResponse["insight"] | null>(null);
 
   function reload() {
     setError(null);
     setWorkspace(null);
+    setInsight(null);
     setReloadKey((key) => key + 1);
   }
 
@@ -113,6 +116,39 @@ export function WorkspacePage() {
       isMounted = false;
     };
   }, [reloadKey]);
+
+  // 학교 출제 경향 카드: 이 워크스페이스 학교·학년의 학교 DB 통계
+  const workspaceId = workspace?.id ?? null;
+  useEffect(() => {
+    if (workspaceId === null) return;
+    let active = true;
+    getSchoolTrends(workspaceId)
+      .then((trends) => {
+        if (!active) return;
+        setInsight({
+          title: "학교 출제 경향",
+          badgeLabel: trends.examCount > 0 ? trends.basis.replace(" 기준", "") : "기출 없음",
+          headline:
+            trends.examCount > 0
+              ? trends.highlights[0] ?? `서술형 비중 ${Math.round(trends.subjectiveRatio * 100)}%`
+              : "아직 학교 DB에 기출이 없습니다",
+          description:
+            trends.examCount > 0
+              ? `${trends.schoolName} ${trends.grade}학년 · 가장 최근 ${trends.latestExam ?? "-"}`
+              : "기출을 올리면 이 학교의 출제 경향이 쌓입니다.",
+          actionLabel: "학교 경향 보기",
+          metrics: trends.types.slice(0, 3).map((type) => ({
+            label: type.label,
+            value: `${Math.round(type.ratio * 100)}%`,
+            percentage: Math.round(type.ratio * 100),
+          })),
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [workspaceId]);
 
   const addModal = adding && (
     <AddWorkspaceModal
@@ -181,7 +217,7 @@ export function WorkspacePage() {
       <div className="workspace-page__content-grid">
         <div>
           <RecentQuestionSets items={workspace.recentQuestionSets} />
-          <ExamInsight insight={workspace.insight} />
+          <ExamInsight insight={insight ?? workspace.insight} onAction={() => navigate("/school-trends")} />
         </div>
 
         <div>
