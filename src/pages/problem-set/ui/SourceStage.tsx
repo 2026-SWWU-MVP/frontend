@@ -3,6 +3,8 @@ import type { MaterialResponse, PastExamResponse } from "@/entities/problem-set/
 import type { ProblemSetResponse } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
+import { examTypeLabels, pastExamStatusLabels } from "@/entities/problem-set/model/labels";
+import { Link } from "react-router-dom";
 
 import { ExistingMaterials, TextMaterialForm } from "./MaterialPicker";
 
@@ -37,11 +39,13 @@ function Field({
   value,
   options,
   onChange,
+  labels,
 }: {
   label: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
+  labels?: Record<string, string>;
 }) {
   return (
     <label className="set-field">
@@ -49,7 +53,9 @@ function Field({
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">선택해 주세요</option>
         {options.map((option) => (
-          <option key={option}>{option}</option>
+          <option key={option} value={option}>
+            {labels?.[option] ?? option}
+          </option>
         ))}
       </select>
     </label>
@@ -203,6 +209,7 @@ export function SourceStage({
                 label="시험 유형"
                 value={examType}
                 options={["MIDTERM", "FINAL"]}
+                labels={examTypeLabels}
                 onChange={(value) =>
                   onExamTypeChange(value as "MIDTERM" | "FINAL")
                 }
@@ -273,7 +280,8 @@ export function SourceStage({
 
           {sourceMode === "past-exam" && pastExam && (
             <div className="privacy-note source-analysis-status">
-              <span>{pastExam.status}</span>
+              <span>{pastExamStatusLabels[pastExam.status] ?? pastExam.status}</span>
+              {pastExam.status === "EXTRACTED" && <Link to="/past-exams">추출 결과 확인·수정</Link>}
               {(pastExam.status === "UPLOADED" ||
                 pastExam.status === "FAILED") && (
                 <Button

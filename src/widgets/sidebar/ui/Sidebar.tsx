@@ -19,6 +19,7 @@ interface NavigationItem {
 const primaryNavigation: NavigationItem[] = [
   { icon: "layout-dashboard", label: "워크스페이스", path: "/workspace" },
   { icon: "files", label: "문제 세트", path: "/problem-sets", count: "24" },
+  { icon: "book-open", label: "기출", path: "/past-exams" },
   { icon: "layers", label: "출제 프로필", path: "/profile" },
   { icon: "database", label: "학교·시험 경향", path: "/school-trends" },
   { icon: "chart-no-axes-combined", label: "데이터 리포트", path: "/reports" },

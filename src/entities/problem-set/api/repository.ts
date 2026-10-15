@@ -32,6 +32,7 @@ export interface PastExamResponse {
   subjectiveCount?: number
   createdAt?: string
   extractedAt?: string
+  createdByName?: string | null
 }
 
 export interface PastQuestionResponse {
@@ -318,6 +319,15 @@ export function uploadPastExam(workspaceId: number, file: File, examYear: number
 
 export function analyzePastExam(pastExamId: number) {
   return httpClient.request<PastExamResponse>({ path: `/api/past-exams/${pastExamId}/analyze`, init: { method: 'POST' } })
+}
+
+export function listPastExams(workspaceId: number) {
+  return httpClient.request<PastExamResponse[]>({ path: workspacePath(workspaceId, '/past-exams') })
+}
+
+/** 기출 삭제. 학교 DB 통계에서도 빠진다 */
+export function deletePastExam(pastExamId: number) {
+  return httpClient.request<void>({ path: `/api/past-exams/${pastExamId}`, init: { method: 'DELETE' } })
 }
 
 export function getPastExam(pastExamId: number) {
