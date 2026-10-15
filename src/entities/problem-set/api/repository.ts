@@ -82,21 +82,82 @@ export interface UpdatePastPassageRequest {
   text?: string
 }
 
+export type ProfileStatus = 'DRAFT' | 'CONFIRMED' | 'SUPERSEDED'
+export type ProfileOrigin = 'INITIAL_ANALYSIS' | 'AI_RECHECK' | 'TEACHER_FEEDBACK' | 'MANUAL_EDIT'
+export type RuleSource = 'PAST_EXAM' | 'SCHOOL_DB' | 'TEACHER'
+export type RuleCategory = 'QUESTION_TYPE' | 'CONDITION' | 'PASSAGE_USE' | 'GRAMMAR_POINT' | 'SCORING' | 'OTHER'
+
 export interface ProfileSummaryResponse {
   id: number
   version: number
-  status: 'DRAFT' | 'CONFIRMED' | 'SUPERSEDED'
+  status: ProfileStatus
+  origin: ProfileOrigin
+  examCount: number
+  ruleCount: number
   createdAt?: string
-  confirmedAt?: string
+  confirmedAt?: string | null
+}
+
+/** 기출에서 코드가 집계한 사실 (강사 의견으로 바뀌지 않음) */
+export interface ProfileStats {
+  examCount: number
+  totalQuestions: number
+  objectiveCount: number
+  subjectiveCount: number
+  subjectiveRatio: number
+  subjectivePointsRatio: number | null
+  typeCounts: Record<string, number>
+  frequentConditions: Array<{ text: string; count: number }>
+  schoolDbExamCount: number | null
+}
+
+export interface ProfileRule {
+  id: string
+  text: string
+  category: RuleCategory
+  source: RuleSource
+  /** 근거 기출 문항. label 예) 2025년 1학기 중간고사 서답형 2번 */
+  evidence: Array<{ id: number; label: string }>
+  /** 강사 의견과 충돌해 이번 시험에는 적용하지 않는 규칙 */
+  overridden: boolean
+  noteIndex: number | null
 }
 
 export interface ProfileResponse {
   id: number
-  status: 'DRAFT' | 'CONFIRMED' | 'SUPERSEDED'
-  version?: number
-  changeSummary?: string
-  stats?: Record<string, number>
-  rules?: Array<{ source: 'PAST_EXAM' | 'SCHOOL_DB' | 'TEACHER'; [key: string]: unknown }>
+  workspaceId: number
+  version: number
+  parentId: number | null
+  status: ProfileStatus
+  origin: ProfileOrigin
+  stats: ProfileStats
+  rules: ProfileRule[]
+  typeMixPerPassage: Record<string, number>
+  teacherNotes: Array<{ text: string; persistent: boolean; createdBy: number | null; createdByName: string | null }>
+  changeSummary: string[]
+  examples: Array<{
+    id: number
+    label: string
+    type: string
+    stem: string
+    body: string | null
+    conditions: string[]
+    choices: string[]
+    answer: string | null
+    points: number | null
+  }>
+  sourceExams: Array<{ id: number; title: string }>
+  llmModel: string | null
+  createdAt: string
+  confirmedAt: string | null
+  createdByName: string | null
+  confirmedByName: string | null
+}
+
+/** 직접 수정. 보낸 항목만 바뀐다. rules는 수정 후 전체 목록 (id 없으면 새 [강사] 규칙, 빠진 규칙은 삭제) */
+export interface ManualEditRequest {
+  rules?: Array<{ id?: string; text: string; category?: RuleCategory; overridden?: boolean }>
+  typeMixPerPassage?: Record<string, number>
 }
 
 export interface PassageResponse {
@@ -239,7 +300,7 @@ export function sendProfileFeedback(profileId: number, text: string, persistent:
   return httpClient.request<ProfileResponse>({ path: `/api/profiles/${profileId}/feedback`, init: { method: 'POST' }, json: { text, persistent } })
 }
 
-export function updateProfile(profileId: number, request: Record<string, unknown>) {
+export function updateProfile(profileId: number, request: ManualEditRequest) {
   return httpClient.request<ProfileResponse>({ path: `/api/profiles/${profileId}`, init: { method: 'PATCH' }, json: request })
 }
 

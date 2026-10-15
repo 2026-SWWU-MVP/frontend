@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   createGenerationJob,
   getGeneratedProblems,
@@ -408,6 +409,7 @@ function InfoCard({
 void InfoCard;
 
 export function ProblemSetPage() {
+  const navigate = useNavigate();
   const userId = getAuthSession()?.userId ?? null;
   const academyState = useAcademyState(userId);
   const academy = getStoredAcademy(userId ?? undefined);
@@ -786,6 +788,9 @@ export function ProblemSetPage() {
                 setStage("generation");
               } else if (pastExam?.status !== "EXTRACTED") {
                 setError("기출 분석이 완료되지 않았습니다.");
+              } else {
+                // 기출 분석이 끝나면 출제 프로필을 검토·확정하러 간다
+                navigate("/profile");
               }
             }}
             sourceMode={sourceMode}

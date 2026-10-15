@@ -11,6 +11,7 @@ import { LandingPage } from "@/pages/landing/ui/LandingPage";
 import { AuthPage } from "@/pages/auth/ui/AuthPage";
 import { AcademyPage } from "@/pages/academy/ui/AcademyPage";
 import { MembersPage } from "@/pages/members/ui/MembersPage";
+import { ProfilePage } from "@/pages/profile/ui/ProfilePage";
 import { RequireAuth } from '@/app/router/RequireAuth'
 
 export const router = createBrowserRouter([
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: "/workspace", element: <WorkspacePage /> },
           { path: "/problem-sets", element: <ProblemSetPage /> },
           { path: "/problem-sets/:problemSetId", element: <ProblemSetPage /> },
+          { path: "/profile", element: <ProfilePage /> },
           { path: "/school-trends", element: <SchoolTrendsPage /> },
           { path: "/reports", element: <ReportsPage /> },
           { path: "/reviews", element: <ReviewsPage /> },
