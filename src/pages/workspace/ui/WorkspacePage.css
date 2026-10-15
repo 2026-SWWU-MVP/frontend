@@ -1,6 +1,6 @@
 .workspace-page__content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 812px) minmax(260px, 300px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--spacing-24);
 }
 

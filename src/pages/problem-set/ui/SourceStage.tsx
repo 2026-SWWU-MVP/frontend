@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MaterialResponse, PastExamResponse } from "@/entities/problem-set/api/repository";
 import type { ProblemSetResponse } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { examTypeLabels, pastExamStatusLabels } from "@/entities/problem-set/model/labels";
 import { Link } from "react-router-dom";
+import { workspaceRepository } from "@/entities/workspace/api/repository";
 
 import { ExistingMaterials, TextMaterialForm } from "./MaterialPicker";
 
@@ -62,6 +63,7 @@ function Field({
   );
 }
 
+/** 문제 세트 정보: 워크스페이스(학교·학년)는 고른 것을 쓰고, 시험만 고른다 (영어 전용) */
 function Metadata({
   info,
   onChange,
@@ -69,27 +71,34 @@ function Metadata({
   info: SetInfo;
   onChange: (key: keyof SetInfo, value: string) => void;
 }) {
+  const [workspaceTitle, setWorkspaceTitle] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    workspaceRepository
+      .execute()
+      .then((workspace) => {
+        if (!active) return;
+        setWorkspaceTitle(workspace.title);
+        onChange("school", workspace.title);
+      })
+      .catch(() => active && setWorkspaceTitle(""));
+    return () => {
+      active = false;
+    };
+    // 화면에 들어올 때 한 번만 워크스페이스 이름을 채운다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <section className="set-card info-card">
       <h2>문제 세트 정보</h2>
-      <Field
-        label="학교"
-        value={info.school}
-        options={["건대부고", "압구정고", "현대고"]}
-        onChange={(value) => onChange("school", value)}
-      />
-      <Field
-        label="학년"
-        value={info.grade}
-        options={["1", "2", "3", "4", "5", "6"]}
-        onChange={(value) => onChange("grade", value)}
-      />
-      <Field
-        label="과목"
-        value={info.subject}
-        options={["국어", "영어", "사회", "과학", "수학"]}
-        onChange={(value) => onChange("subject", value)}
-      />
+      <div className="set-field">
+        <strong>워크스페이스</strong>
+        <p className="info-card__value">
+          {workspaceTitle === null ? "불러오는 중..." : workspaceTitle || "워크스페이스 없음"}{" "}
+          <Link to="/workspace">바꾸기</Link>
+        </p>
+      </div>
       <Field
         label="시험"
         value={info.exam}
@@ -97,7 +106,7 @@ function Metadata({
         onChange={(value) => onChange("exam", value)}
       />
       <small className="field-help">
-        선택이 완료되면 문제 세트 이름이 자동으로 생성됩니다.
+        {info.school && info.exam ? `문제 세트 이름: ${info.school} ${info.exam} 대비` : "시험을 고르면 문제 세트 이름이 만들어집니다."}
       </small>
     </section>
   );

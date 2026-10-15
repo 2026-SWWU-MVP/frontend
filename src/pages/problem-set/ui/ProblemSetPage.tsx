@@ -3,25 +3,19 @@ import { useNavigate } from "react-router-dom";
 import {
   createGenerationJob,
   getGeneratedProblems,
-  getGenerationJob,
-  getMaterial,
   analyzePastExam,
-  getPastExam,
   getPastExamQuestions,
   uploadMaterialText,
 } from "@/entities/problem-set/api/repository";
 import type {
   MaterialResponse,
-  PastExamResponse,
   ProblemResponse,
 } from "@/entities/problem-set/api/repository";
 import type {
-  ProblemQuestion,
   ProblemSetResponse,
   ProblemSetStage,
 } from "@/entities/problem-set/model/types";
 import { buildProblemSetName } from "@/entities/problem-set/model/types";
-import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import { resolveWorkspaceId } from "@/entities/workspace/api/repository";
@@ -62,23 +56,6 @@ const stages: Array<{ id: ProblemSetStage; label: string }> = [
   { id: "output", label: "확정·출력" },
 ];
 
-/* Legacy stage labels retained below for reference only.
-const brokenStages: Array<{ id: ProblemSetStage; label: string }> = [
-  { id: "source", label: "자료 입력" },
-  { id: "generation", label: "AI 생성" },
-  { id: "review", label: "문항 검토" },
-  { id: "output", label: "확정·출력" },
-];
-
-const legacyStages: Array<{ id: ProblemSetStage; label: string }> = [
-  { id: "source", label: "자료 입력" },
-  { id: "generation", label: "AI 생성" },
-  { id: "review", label: "공동 검토" },
-  { id: "output", label: "확정·출력" },
-];
-
-*/
-
 const emptyProblemSet: ProblemSetResponse = {
   id: "backend-problem-set",
   title: "",
@@ -93,76 +70,6 @@ const emptyProblemSet: ProblemSetResponse = {
   passage: "",
 };
 
-function problemResponseToQuestion(
-  problem: ProblemResponse,
-  index: number,
-): ProblemQuestion {
-  return {
-    id: String(problem.id),
-    number: index + 1,
-    stage: "review",
-    stageLabel: problem.typeLabel ?? problem.type ?? "",
-    title: problem.stem ?? problem.body ?? "",
-    prompt: problem.stem ?? problem.body ?? "",
-    answerText: problem.answerText,
-    explanation: problem.explanation ?? undefined,
-    reviewStatus: problem.reviewStatus,
-    choices: (problem.choices ?? []).map((choice, choiceIndex) => ({
-      id: `${problem.id}-${choiceIndex}`,
-      label: String.fromCharCode(65 + choiceIndex),
-      text: choice,
-    })),
-  };
-}
-
-function wait(milliseconds: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-}
-
-async function waitForMaterialSplitLegacy(materialId: number) {
-  for (let attempt = 0; attempt < 90; attempt += 1) {
-    const material = await getMaterial(materialId);
-    if (material.status === "SPLIT" || material.status === "FAILED") {
-      return material;
-    }
-    await wait(2000);
-  }
-  throw new Error(
-    "자료 분리 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.",
-  );
-}
-
-async function waitForPastExamExtractionLegacy(
-  examId: number,
-  onStatus: (status: PastExamResponse["status"]) => void,
-) {
-  for (let attempt = 0; attempt < 90; attempt += 1) {
-    const exam = await getPastExam(examId);
-    onStatus(exam.status);
-    if (exam.status === "EXTRACTED" || exam.status === "FAILED") return exam;
-    await wait(2000);
-  }
-  throw new Error(
-    "기출 분석 시간이 초과되었습니다. 잠시 후 상태를 다시 확인해 주세요.",
-  );
-}
-
-async function waitForGenerationLegacy(
-  jobId: number,
-  onProgress: (progress: number) => void,
-) {
-  for (let attempt = 0; attempt < 90; attempt += 1) {
-    const job = await getGenerationJob(jobId);
-    onProgress(job.progress ?? 0);
-    if (job.status === "COMPLETED" || job.status === "FAILED") {
-      return job;
-    }
-    await wait(2000);
-  }
-  throw new Error(
-    "문제 생성 시간이 초과되었습니다. 잠시 후 다시 확인해 주세요.",
-  );
-}
 function Stepper({ stage }: { stage: ProblemSetStage }) {
   const active = stages.findIndex((item) => item.id === stage);
   return (
@@ -180,116 +87,6 @@ function Stepper({ stage }: { stage: ProblemSetStage }) {
     </div>
   );
 }
-function SelectField({ label, value }: { label: string; value: string }) {
-  return (
-    <label className="set-field">
-      <strong>{label}</strong>
-      <span>
-        {value}
-        <Icon name="chevron-down" size={14} />
-      </span>
-    </label>
-  );
-}
-function LegacyFiles({
-  files,
-  selected = false,
-}: {
-  files: ProblemSetResponse["files"];
-  selected?: boolean;
-}) {
-  return (
-    <div className="file-list">
-      {files.map((file) => (
-        <div className="set-file" key={file.id}>
-          <span className="file-icon">
-            <Icon name="files" size={18} tone="accent" />
-          </span>
-          <div>
-            <strong>{file.name}</strong>
-            <small>{file.meta}</small>
-          </div>
-          <em>{selected ? "선택됨" : "분석 완료"}</em>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LegacyPendingFile({
-  name,
-  uploading,
-  failed,
-}: {
-  name: string;
-  uploading: boolean;
-  failed: boolean;
-}) {
-  return (
-    <div className="file-list">
-      <div className="set-file">
-        <span className="file-icon">
-          <Icon name="files" size={18} tone="accent" />
-        </span>
-        <div>
-          <strong>{name}</strong>
-          <small>
-            {uploading
-              ? "업로드 중..."
-              : failed
-                ? "업로드 실패"
-                : "파일 선택됨"}
-          </small>
-        </div>
-        <em className={failed ? "is-failed" : ""}>
-          {uploading ? "업로드 중" : failed ? "실패" : "대기 중"}
-        </em>
-      </div>
-    </div>
-  );
-}
-
-function LegacyDisplayedFiles({
-  files,
-  selected = false,
-}: {
-  files: ProblemSetResponse["files"];
-  selected?: boolean;
-}) {
-  return (
-    <div className="file-list">
-      {files.map((file) => {
-        const analyzed = /SPLIT|EXTRACTED/.test(file.meta);
-        return (
-          <div className="set-file" key={file.id}>
-            <span className="file-icon">
-              <Icon name="files" size={18} tone="accent" />
-            </span>
-            <div>
-              <strong>{file.name}</strong>
-              <small>{file.meta}</small>
-            </div>
-            <em>
-              {selected ? "선택됨" : analyzed ? "분석 완료" : "업로드 완료"}
-            </em>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-void LegacyPendingFile;
-void problemResponseToQuestion;
-void waitForMaterialSplitLegacy;
-void waitForPastExamExtractionLegacy;
-void waitForGenerationLegacy;
-
-void LegacyFiles;
-void LegacyInfoCard;
-
-void LegacyDisplayedFiles;
-
 function Header({
   data,
   stage,
@@ -315,100 +112,12 @@ function Header({
         <p>
           {stage === "source"
             ? "시험지·보유 교재를 올리거나 지문과 문항을 직접 입력할 수 있습니다."
-            : `${data.school} · ${data.grade} · ${data.subject} · ${data.exam}`}
+            : [data.school, data.exam].filter(Boolean).join(" · ")}
         </p>
       </div>
-      <Button variant="secondary">▣ 초안 저장</Button>
     </div>
   );
 }
-function LegacyInfoCard({ data }: { data: ProblemSetResponse }) {
-  return (
-    <section className="set-card info-card">
-      <h2>문제 세트 정보</h2>
-      <label className="set-field full">
-        <strong>세트 이름</strong>
-        <input value="한빛고 2학년 · 공공재와 시장 실패" readOnly />
-      </label>
-      <div className="field-grid">
-        <SelectField label="학교" value={data.school} />
-        <SelectField label="학년" value={data.grade} />
-        <SelectField label="과목" value={data.subject} />
-        <SelectField label="영역" value={data.area} />
-      </div>
-      <SelectField label="시험" value={data.exam} />
-      <label className="set-field full">
-        <strong>시험 범위</strong>
-        <input value={data.scope} readOnly />
-      </label>
-      <small className="field-help">
-        학교와 과목은 직접 입력해 추가할 수 있습니다. 등록된 목록에 없는 경우도
-        생성 가능해요.
-      </small>
-    </section>
-  );
-}
-
-const schoolOptions = ["건대부고", "압구정고", "현대고"];
-const gradeOptions = ["1", "2", "3", "4", "5", "6"];
-const subjectOptions = ["국어", "영어", "사회", "과학", "수학"];
-const examOptions = ["중간고사", "기말고사"];
-
-function InfoCard({
-  school,
-  grade,
-  subject,
-  exam,
-  onChange,
-}: {
-  school: string;
-  grade: string;
-  subject: string;
-  exam: string;
-  onChange: (
-    key: "school" | "grade" | "subject" | "exam",
-    value: string,
-  ) => void;
-}) {
-  const field = (
-    label: string,
-    value: string,
-    options: string[],
-    key: "school" | "grade" | "subject" | "exam",
-  ) => (
-    <label className="set-field">
-      <strong>{label}</strong>
-      <select
-        value={value}
-        onChange={(event) => onChange(key, event.target.value)}
-      >
-        <option value="">선택해 주세요</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-
-  return (
-    <section className="set-card info-card">
-      <h2>문제 세트 정보</h2>
-      {field("학교", school, schoolOptions, "school")}
-      {field("학년", grade, gradeOptions, "grade")}
-      {field("과목", subject, subjectOptions, "subject")}
-      {field("시험", exam, examOptions, "exam")}
-      <small className="field-help">
-        학교, 학년, 과목, 시험을 모두 선택하면 문제 세트 이름이 자동으로
-        생성됩니다.
-      </small>
-    </section>
-  );
-}
-
-void InfoCard;
-
 export function ProblemSetPage() {
   const navigate = useNavigate();
   const userId = getAuthSession()?.userId ?? null;
@@ -419,7 +128,7 @@ export function ProblemSetPage() {
   const [setInfo, setSetInfo] = useState({
     school: "",
     grade: "",
-    subject: "",
+    subject: "영어",
     exam: "",
   });
   const [stage, setStage] = useState<ProblemSetStage>("source");
@@ -455,12 +164,7 @@ export function ProblemSetPage() {
   ) => {
     setSetInfo((current) => {
       const next = { ...current, [key]: value };
-      const title = buildProblemSetName(
-        next.school,
-        next.grade,
-        next.subject,
-        next.exam,
-      );
+      const title = buildProblemSetName(next.school, next.exam);
       setData((dataCurrent) => ({
         ...dataCurrent,
         ...next,
@@ -757,7 +461,7 @@ export function ProblemSetPage() {
                   return;
                 }
                 if (!data.title) {
-                  setError("학교, 학년, 과목, 시험을 모두 선택해 주세요.");
+                  setError("시험(중간고사·기말고사)을 선택해 주세요.");
                   return;
                 }
                 setStage("generation");
