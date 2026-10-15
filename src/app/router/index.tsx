@@ -5,7 +5,6 @@ import { PlaceholderPage } from "@/pages/placeholder/ui/PlaceholderPage";
 import { WorkspacePage } from "@/pages/workspace/ui/WorkspacePage";
 import { SchoolTrendsPage } from "@/pages/school-trends/ui/SchoolTrendsPage";
 import { ReportsPage } from "@/pages/reports/ui/ReportsPage";
-import { ReviewsPage } from "@/pages/reviews/ui/ReviewsPage";
 import { AppShell } from "@/widgets/app-shell/ui/AppShell";
 import { LandingPage } from "@/pages/landing/ui/LandingPage";
 import { AuthPage } from "@/pages/auth/ui/AuthPage";
@@ -43,7 +42,6 @@ export const router = createBrowserRouter([
           { path: "/profile", element: <ProfilePage /> },
           { path: "/school-trends", element: <SchoolTrendsPage /> },
           { path: "/reports", element: <ReportsPage /> },
-          { path: "/reviews", element: <ReviewsPage /> },
           { path: "/members", element: <MembersPage /> },
           { path: "/settings", element: <PlaceholderPage /> },
           { path: "*", element: <PlaceholderPage /> },

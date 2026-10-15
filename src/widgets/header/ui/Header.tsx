@@ -18,7 +18,7 @@ export function Header() {
     "/problem-sets": "문제 세트",
     "/school-trends": "학교·시험 경향",
     "/reports": "데이터 리포트",
-    "/reviews": "시험 후 리뷰",
+    "/profile": "출제 프로필",
     "/settings": "워크스페이스 설정",
   };
   const pageLabel =

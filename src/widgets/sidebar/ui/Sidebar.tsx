@@ -22,7 +22,6 @@ const primaryNavigation: NavigationItem[] = [
   { icon: "layers", label: "출제 프로필", path: "/profile" },
   { icon: "database", label: "학교·시험 경향", path: "/school-trends" },
   { icon: "chart-no-axes-combined", label: "데이터 리포트", path: "/reports" },
-  { icon: "clipboard-check", label: "시험 후 리뷰", path: "/reviews" },
 ];
 
 const secondaryNavigation: NavigationItem[] = [
