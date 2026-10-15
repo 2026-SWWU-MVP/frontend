@@ -1,5 +1,5 @@
 import { appConfig } from '@/shared/config/env'
-import { clearAuthSession, getStoredUserId } from '@/shared/auth/session'
+import { clearAuthSession, getAuthSession, getStoredUserId, saveAuthSession } from '@/shared/auth/session'
 
 import type { ApiClient, ApiRequest } from './types'
 
@@ -37,7 +37,7 @@ export class ApiNetworkError extends Error {
   readonly cause: unknown
 
   constructor(cause: unknown) {
-    super('네트워크 오류가 발생했습니다.')
+    super('서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 잠시 후 다시 시도해 주세요.')
     this.name = 'ApiNetworkError'
     this.cause = cause
   }
@@ -60,6 +60,32 @@ function resolveUrl(baseUrl: string, path: string) {
 
 function isApiErrorBody(body: unknown): body is ApiErrorBody {
   return typeof body === 'object' && body !== null
+}
+
+/** 서버가 안내 문구 없이 실패했을 때(프록시 오류 페이지 등) 보여줄 문구 */
+function fallbackMessage(status: number) {
+  if (status === 400) return '요청 값이 올바르지 않습니다. 입력한 내용을 확인해 주세요.'
+  if (status === 403) return '이 기능을 사용할 권한이 없습니다.'
+  if (status === 404) return '찾을 수 없습니다. 삭제되었거나 다른 학원의 자료일 수 있습니다.'
+  if (status === 409) return '지금 상태에서는 할 수 없는 작업입니다. 화면을 새로고침한 뒤 다시 시도해 주세요.'
+  if (status === 413) return '파일이 너무 큽니다.'
+  if (status === 502 || status === 503 || status === 504) return '서버나 AI가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.'
+  if (status >= 500) return '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+  return `요청을 처리하지 못했습니다. (${status})`
+}
+
+/** 짧은 일반 텍스트만 오류 문구로 쓴다 (HTML 오류 페이지는 사용자에게 보여주지 않음) */
+function isReadableText(body: unknown): body is string {
+  return typeof body === 'string' && body.length > 0 && body.length <= 300 && !/<[a-z!/]/i.test(body)
+}
+
+/** 학원에서 내보내져 소속이 없어졌으면 학원 연결 화면으로 */
+function handleNoAcademy() {
+  const session = getAuthSession()
+  if (session) saveAuthSession({ ...session, name: session.name ?? '', academyId: null, role: null })
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/academy')) {
+    window.location.assign('/academy')
+  }
 }
 
 function isAuthPath(path: string) {
@@ -91,12 +117,15 @@ async function parseResponse<TResponse>(
   }
 
   if (!response.ok) {
-    const message = isApiErrorBody(body) && typeof body.message === 'string'
+    const message = isApiErrorBody(body) && typeof body.message === 'string' && body.message
       ? body.message
-      : typeof body === 'string' && body.length > 0
+      : isReadableText(body)
         ? body
-        : `Request failed with ${response.status}`
+        : fallbackMessage(response.status)
     const error = new ApiError(message, response.status, body)
+    if (response.status === 403 && error.code === 'NO_ACADEMY') {
+      handleNoAcademy()
+    }
     if (response.status === 401) {
       clearAuthSession()
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
