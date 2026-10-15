@@ -6,7 +6,7 @@ function Logo() {
   return (
     <Link className="public-logo" to="/">
       <span className="public-logo__mark">▥</span>
-      <strong>내신 뚝딱</strong>
+      <strong>내신뿌뿌</strong>
     </Link>
   );
 }
@@ -43,12 +43,12 @@ export function LandingPage() {
           <p>
             AI로 변형하고, 선생님과 함께 검토하고, 수업에 바로 활용하세요.
             <br />
-            내신뚝딱은 문제 제작부터 시험 후 리뷰까지 연결하는 내신 준비
+            내신뿌뿌는 기출 분석부터 문제 생성·검수·시험지 출력까지 연결하는 내신 준비
             워크스페이스입니다.
           </p>
           <div
             className="product-preview"
-            aria-label="내신 뚝딱 워크스페이스 미리보기"
+            aria-label="내신뿌뿌 워크스페이스 미리보기"
           >
             <aside>
               <Logo />
