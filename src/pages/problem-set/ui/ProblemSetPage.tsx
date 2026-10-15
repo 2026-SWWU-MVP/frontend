@@ -7,12 +7,13 @@ import {
   getWorksheet,
   createWorksheet,
   getMaterial,
-  getMaterialPassages,
   analyzePastExam,
   getPastExam,
   getPastExamQuestions,
+  uploadMaterialText,
 } from "@/entities/problem-set/api/repository";
 import type {
+  MaterialResponse,
   PastExamResponse,
   ProblemResponse,
 } from "@/entities/problem-set/api/repository";
@@ -42,10 +43,10 @@ import {
   resetProblemReview,
 } from "@/pages/problem-set/model/reviewWorkflow";
 import type { ReviewAction, ReviewEdit } from "@/pages/problem-set/ui/ReviewStage";
-import { resolveConfirmedProfile } from "@/pages/problem-set/model/generationWorkflow";
 import { downloadProblemWorksheet } from "@/pages/problem-set/model/outputWorkflow";
 import { SourceStage } from "@/pages/problem-set/ui/SourceStage";
 import { GenerationStage } from "@/pages/problem-set/ui/GenerationStage";
+import type { GenerationSelection } from "@/pages/problem-set/ui/GenerationStage";
 import { ReviewStage } from "@/pages/problem-set/ui/ReviewStage";
 import { OutputStage } from "@/pages/problem-set/ui/OutputStage";
 import { useSourceState } from "@/pages/problem-set/model/useSourceState";
@@ -54,7 +55,6 @@ import { useReviewState } from "@/pages/problem-set/model/useReviewState";
 import {
   problemResponseToQuestion as toProblemQuestion,
   waitForGeneration as waitForGenerationWorkflow,
-  waitForMaterialSplit as waitForMaterialSplitWorkflow,
   waitForPastExamExtraction as waitForPastExamExtractionWorkflow,
 } from "@/pages/problem-set/model/workflow";
 
@@ -648,32 +648,19 @@ export function ProblemSetPage() {
     }
   };
 
-  const generate = async () => {
+  const generate = async (selection: GenerationSelection) => {
     if (generating) return;
     setError(null);
     setGenerating(true);
     setProgress(0);
     try {
       const workspaceId = await resolveWorkspaceId();
-      if (data.materialId === undefined) {
-        throw new Error("먼저 PDF 파일을 업로드해 주세요.");
-      }
-
-      const material = await waitForMaterialSplitWorkflow(data.materialId);
-      if (material.status === "FAILED") {
-        throw new Error(
-          material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.",
-        );
-      }
-      const passages = await getMaterialPassages(data.materialId);
-      if (passages.length === 0) {
-        throw new Error("생성에 사용할 지문이 없습니다.");
-      }
-      const profile = await resolveConfirmedProfile(workspaceId);
+      const { passages } = selection;
       const job = await createGenerationJob(
         workspaceId,
-        profile.id,
+        selection.profileId,
         passages.map((passage) => passage.id),
+        selection.perPassage,
       );
       const completedJob = await waitForGenerationWorkflow(job.id, setProgress);
       if (completedJob.status === "FAILED") {
@@ -702,6 +689,36 @@ export function ProblemSetPage() {
       );
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // 자료를 고르면(PDF·텍스트·기존 자료) 이 자료로 생성한다
+  const selectMaterial = (material: MaterialResponse, fallbackName: string) => {
+    setError(null);
+    setData((current) => ({
+      ...current,
+      id: String(material.id),
+      materialId: material.id,
+      files: [
+        {
+          id: String(material.id),
+          name: material.title || material.originalFilename || fallbackName,
+          meta: `${material.sourceType === "TEXT" ? "텍스트" : "PDF"} · 지문 ${material.passageCount ?? 0}개`,
+        },
+      ],
+    }));
+  };
+
+  const uploadText = async (title: string, text: string) => {
+    setError(null);
+    setUploading(true);
+    try {
+      const workspaceId = await resolveWorkspaceId();
+      selectMaterial(await uploadMaterialText(workspaceId, title, text), title);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "텍스트 자료를 등록하지 못했습니다.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -806,6 +823,8 @@ export function ProblemSetPage() {
             setInfo={setInfo}
             onSetInfoChange={updateSetInfo}
             onRemoveFile={removeFile}
+            onTextSubmit={(title, text) => void uploadText(title, text)}
+            onPickMaterial={(material) => selectMaterial(material, `자료 ${material.id}`)}
           />
         )}
         {stage === "generation" && (

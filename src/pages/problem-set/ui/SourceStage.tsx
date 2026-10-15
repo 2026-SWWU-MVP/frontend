@@ -1,8 +1,10 @@
-import { useRef } from "react";
-import type { PastExamResponse } from "@/entities/problem-set/api/repository";
+import { useRef, useState } from "react";
+import type { MaterialResponse, PastExamResponse } from "@/entities/problem-set/api/repository";
 import type { ProblemSetResponse } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
+
+import { ExistingMaterials, TextMaterialForm } from "./MaterialPicker";
 
 type SetInfo = { school: string; grade: string; subject: string; exam: string };
 type Props = {
@@ -26,6 +28,8 @@ type Props = {
   setInfo: SetInfo;
   onSetInfoChange: (key: keyof SetInfo, value: string) => void;
   onRemoveFile: (id: string) => void;
+  onTextSubmit: (title: string, text: string) => void;
+  onPickMaterial: (material: MaterialResponse) => void;
 };
 
 function Field({
@@ -145,8 +149,11 @@ export function SourceStage({
   setInfo,
   onSetInfoChange,
   onRemoveFile,
+  onTextSubmit,
+  onPickMaterial,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [materialInput, setMaterialInput] = useState<"pdf" | "text" | "existing">("pdf");
 
   return (
     <>
@@ -203,7 +210,37 @@ export function SourceStage({
             </div>
           )}
 
-          <div className={`upload-box ${sourceMode}`}>
+          {sourceMode === "material" && (
+            <div className="material-input-tabs" role="tablist" aria-label="자료 입력 방법">
+              {(
+                [
+                  ["pdf", "PDF 올리기"],
+                  ["text", "텍스트 붙여넣기"],
+                  ["existing", "올린 자료에서 고르기"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  aria-selected={materialInput === value}
+                  className={materialInput === value ? "is-active" : undefined}
+                  key={value}
+                  onClick={() => setMaterialInput(value)}
+                  role="tab"
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {sourceMode === "material" && materialInput === "text" && (
+            <TextMaterialForm busy={uploading} onSubmit={onTextSubmit} />
+          )}
+          {sourceMode === "material" && materialInput === "existing" && (
+            <ExistingMaterials onPick={onPickMaterial} selectedId={data.materialId} />
+          )}
+
+          <div className={`upload-box ${sourceMode}`} hidden={sourceMode === "material" && materialInput !== "pdf"}>
             <Icon name="files" size={22} tone="accent" />
             <strong>
               {sourceMode === "past-exam"
