@@ -8,17 +8,21 @@ export interface MemberForModal {
   id: number;
   initials: string;
   name: string;
-  email: string;
-  role: "관리자" | "강사";
+  loginId: string;
+  role: "원장" | "강사";
 }
 
 interface RemoveMemberModalProps {
+  academyName: string;
+  busy?: boolean;
   member: MemberForModal;
   onClose: () => void;
   onConfirm: (member: MemberForModal) => void;
 }
 
 export function RemoveMemberModal({
+  academyName,
+  busy = false,
   member,
   onClose,
   onConfirm,
@@ -28,8 +32,8 @@ export function RemoveMemberModal({
       <div className="member-modal__content">
         <h3>{member.name}을(를) 팀에서 내보낼까요?</h3>
         <p className="member-modal__description">
-          내보내면 봄길학원 워크스페이스에 더 이상 접근할 수 없습니다. 진행하기
-          전에 아래 내용을 확인해 주세요.
+          내보내면 {academyName}의 워크스페이스에 더 이상 접근할 수 없습니다.
+          진행하기 전에 아래 내용을 확인해 주세요.
         </p>
 
         <div className="member-modal__member">
@@ -37,7 +41,7 @@ export function RemoveMemberModal({
           <div className="member-modal__member-info">
             <strong>{member.name}</strong>
             <span>
-              {member.email} · {member.role}
+              {member.loginId} · {member.role}
             </span>
           </div>
         </div>
@@ -72,9 +76,10 @@ export function RemoveMemberModal({
           variant="primary"
           type="button"
           className="member-modal__danger-button"
+          disabled={busy}
           onClick={() => onConfirm(member)}
         >
-          강사 내보내기
+          {busy ? "내보내는 중..." : "강사 내보내기"}
         </Button>
       </div>
     </Modal>
