@@ -2,7 +2,7 @@ import { httpClient } from '@/shared/api/httpClient'
 import type { Repository } from '@/shared/api/types'
 
 import type { WorkspaceOption, WorkspaceResponse } from '@/entities/workspace/model/types'
-import { getWorkspaceId, setWorkspaceId } from '@/shared/auth/workspace'
+import { getWorkspaceId, MissingWorkspaceIdError, setWorkspaceId } from '@/shared/auth/workspace'
 
 interface WorkspaceApiResponse {
   id: number
@@ -20,6 +20,37 @@ interface WorkspaceApiResponse {
 export interface SchoolResponse {
   id: number
   name: string
+  region?: string | null
+  aliases?: string[]
+}
+
+/** 학원에 워크스페이스가 하나도 없을 때 (새 학원) */
+export class NoWorkspaceError extends Error {
+  constructor() {
+    super('아직 워크스페이스가 없습니다.')
+    this.name = 'NoWorkspaceError'
+  }
+}
+
+function toOption(workspace: WorkspaceApiResponse): WorkspaceOption {
+  return {
+    id: workspace.id,
+    title: workspaceTitle(workspace),
+    pastExamCount: workspace.summary?.pastExamCount ?? 0,
+    profileStatus: workspace.summary?.profileStatus ?? null,
+    confirmedProfileVersion: workspace.summary?.confirmedProfileVersion ?? null,
+    latestWorksheetTitle: workspace.summary?.latestWorksheet?.title ?? null,
+  }
+}
+
+/** 고른 워크스페이스 ID. 아직 고르지 않았으면(바로 들어온 경우) 첫 번째 워크스페이스를 고른다 */
+export async function resolveWorkspaceId() {
+  const stored = getWorkspaceId()
+  if (stored !== null) return stored
+  const response = await httpClient.request<WorkspaceApiResponse[]>({ path: '/api/workspaces' })
+  if (response.length === 0) throw new MissingWorkspaceIdError()
+  setWorkspaceId(response[0].id)
+  return response[0].id
 }
 
 export function searchSchools(query: string) {
@@ -78,10 +109,10 @@ function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[
 export const workspaceRepository: Repository<void, WorkspaceResponse> = {
   async execute() {
     const response = await httpClient.request<WorkspaceApiResponse[]>({ path: '/api/workspaces' })
-    if (response.length === 0) throw new Error('등록된 워크스페이스가 없습니다.')
+    if (response.length === 0) throw new NoWorkspaceError()
     // 고른 워크스페이스가 목록에 없으면(처음 로그인 등) 첫 번째를 고른다
     const selected = response.find((workspace) => workspace.id === getWorkspaceId()) ?? response[0]
     setWorkspaceId(selected.id)
-    return mapWorkspace(selected, response.map((workspace) => ({ id: workspace.id, title: workspaceTitle(workspace) })))
+    return mapWorkspace(selected, response.map(toOption))
   },
 }

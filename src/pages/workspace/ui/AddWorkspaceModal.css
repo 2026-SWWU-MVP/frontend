@@ -1,0 +1,118 @@
+.add-workspace {
+  display: grid;
+  gap: var(--spacing-8);
+}
+
+.add-workspace__lead {
+  margin: 0 0 var(--spacing-8);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-165);
+}
+
+.add-workspace__label {
+  margin-top: var(--spacing-8);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-bold);
+}
+
+.add-workspace input {
+  height: 42px;
+  padding: 0 var(--spacing-12);
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-8);
+  font: inherit;
+  font-size: var(--font-size-13);
+}
+
+.add-workspace__results {
+  display: grid;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-8);
+  list-style: none;
+}
+
+.add-workspace__results button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: var(--spacing-10) var(--spacing-12);
+  border: 0;
+  border-bottom: var(--stroke-width-1) solid var(--color-border-default);
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.add-workspace__results li:last-child button {
+  border-bottom: 0;
+}
+
+.add-workspace__results button:hover,
+.add-workspace__results button:focus-visible {
+  background: var(--color-surface-accent);
+}
+
+.add-workspace__results strong {
+  font-size: var(--font-size-13);
+}
+
+.add-workspace__results small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-11);
+}
+
+.add-workspace__new strong {
+  color: var(--color-action-primary);
+}
+
+.add-workspace__selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-8);
+  padding: var(--spacing-10) var(--spacing-12);
+  border-radius: var(--radius-8);
+  background: var(--color-surface-accent);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-bold);
+}
+
+.add-workspace__grades {
+  display: flex;
+  gap: var(--spacing-8);
+}
+
+.add-workspace__grades button {
+  flex: 1;
+  height: 40px;
+  border: var(--stroke-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-8);
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-13);
+  cursor: pointer;
+}
+
+.add-workspace__grades button.is-active {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+.add-workspace__error {
+  margin: var(--spacing-8) 0 0;
+  padding: var(--spacing-10) var(--spacing-12);
+  border-radius: var(--radius-8);
+  color: #b42318;
+  background: #fdecea;
+  font-size: var(--font-size-13);
+}

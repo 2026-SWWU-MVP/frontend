@@ -25,7 +25,7 @@ import { buildProblemSetName } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
-import { requireWorkspaceId } from "@/shared/auth/workspace";
+import { resolveWorkspaceId } from "@/entities/workspace/api/repository";
 import { getAuthSession } from "@/shared/auth/session";
 import { getStoredAcademy } from "@/shared/academy/academy";
 import { useAcademyState } from "@/shared/academy/state";
@@ -515,7 +515,7 @@ export function ProblemSetPage() {
     setUploadFailed(false);
     setUploading(true);
     try {
-      const workspaceId = requireWorkspaceId();
+      const workspaceId = await resolveWorkspaceId();
       if (
         file.type !== "application/pdf" &&
         !file.name.toLowerCase().endsWith(".pdf")
@@ -556,7 +556,7 @@ export function ProblemSetPage() {
     setUploadFailed(false);
     setUploading(true);
     try {
-      const workspaceId = requireWorkspaceId();
+      const workspaceId = await resolveWorkspaceId();
       setPastExam(null);
       setData((current) => ({ ...current, materialId: undefined, files: [] }));
       if (
@@ -654,7 +654,7 @@ export function ProblemSetPage() {
     setGenerating(true);
     setProgress(0);
     try {
-      const workspaceId = requireWorkspaceId();
+      const workspaceId = await resolveWorkspaceId();
       if (data.materialId === undefined) {
         throw new Error("먼저 PDF 파일을 업로드해 주세요.");
       }
@@ -730,7 +730,7 @@ export function ProblemSetPage() {
     }
     setError(null);
     try {
-      const workspaceId = requireWorkspaceId();
+      const workspaceId = await resolveWorkspaceId();
       // 시험지에는 이번 생성 작업에서 채택한 문항만 넣는다 (워크스페이스 전체 채택 문항 아님)
       const accepted = data.questions.filter(
         (question) => question.reviewStatus === "ACCEPTED",

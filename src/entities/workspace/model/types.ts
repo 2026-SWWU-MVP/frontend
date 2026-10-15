@@ -35,9 +35,14 @@ export interface InsightMetric {
   percentage: number;
 }
 
+/** 워크스페이스 카드 (학교 + 학년) */
 export interface WorkspaceOption {
   id: number;
   title: string;
+  pastExamCount: number;
+  profileStatus: string | null;
+  confirmedProfileVersion: number | null;
+  latestWorksheetTitle: string | null;
 }
 
 export interface WorkspaceResponse {
