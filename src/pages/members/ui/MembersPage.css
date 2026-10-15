@@ -287,3 +287,76 @@
     display: flex;
   }
 }
+
+/* API 연동 (#27) */
+.members-page__error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #b42318;
+  background: #fdecea;
+  font-size: 13px;
+}
+.members-page__muted {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.members-page__academy-form {
+  display: grid;
+  gap: 6px;
+}
+.members-page__academy-form label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.members-page__academy-form > div {
+  display: flex;
+  gap: 8px;
+}
+.members-page__academy-form input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.members-page__logo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.members-page__logo-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 56px;
+  border: 1px dashed var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-surface-canvas);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  overflow: hidden;
+}
+.members-page__logo-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.members-page__logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.members-page__code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 22px !important;
+  letter-spacing: 0.12em;
+}

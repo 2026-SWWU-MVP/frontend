@@ -118,7 +118,10 @@ export function createHttpClient(
   return {
     async request<TResponse>({ path, init, json, responseType, userId }: ApiRequest) {
       const headers = new Headers(init?.headers)
-      headers.set('Accept', responseType === 'blob' ? 'application/pdf, application/octet-stream' : 'application/json')
+      // 요청에서 Accept를 정했으면 그대로 둔다 (예: 로고 이미지)
+      if (!headers.has('Accept')) {
+        headers.set('Accept', responseType === 'blob' ? 'application/pdf, application/octet-stream' : 'application/json')
+      }
 
       let body = init?.body
       if (json !== undefined) {
