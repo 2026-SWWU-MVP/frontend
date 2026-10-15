@@ -970,3 +970,207 @@
   flex-wrap: wrap;
   gap: 4px;
 }
+
+/* 자료 입력 방법·생성 설정 (#31) */
+.material-input-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+}
+.material-input-tabs button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 999px;
+  background: var(--color-surface-default);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.material-input-tabs button.is-active {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+  font-weight: 700;
+}
+.material-text {
+  display: grid;
+  gap: 6px;
+}
+.material-text label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.material-text input,
+.material-text textarea,
+.passage-editor input,
+.passage-editor textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.material-text .button {
+  justify-self: start;
+  margin-top: 6px;
+}
+.material-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.material-list button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.material-list button.is-active {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+.material-list button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.material-list strong {
+  font-size: 13px;
+}
+.material-list small {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.generation-error {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #b42318;
+  background: #fdecea;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.passage-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+.passage-list > li {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  opacity: 0.6;
+}
+.passage-list > li.is-selected {
+  border-color: var(--color-action-primary);
+  opacity: 1;
+}
+.passage-list__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.passage-list__head strong {
+  font-size: 13px;
+}
+.passage-list__head small {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.passage-list p {
+  display: -webkit-box;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.passage-list__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+.passage-list__actions .button {
+  font-size: 12px;
+}
+.passage-editor {
+  display: grid;
+  gap: 6px;
+}
+.passage-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.type-settings {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.type-setting {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+}
+.type-setting.is-enabled {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+.type-setting__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.type-setting__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 8px;
+  padding-left: 24px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.type-setting__options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.type-setting__options input[type="number"],
+.type-setting__options select {
+  width: 64px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  background: var(--color-surface-default);
+  font: inherit;
+}
+.generation-total {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.generation-total b {
+  color: var(--color-action-primary);
+}

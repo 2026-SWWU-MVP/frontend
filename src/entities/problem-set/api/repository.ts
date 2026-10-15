@@ -343,6 +343,24 @@ export function updatePassage(passageId: number, content: string, title?: string
   return httpClient.request<PassageResponse>({ path: `/api/passages/${passageId}`, init: { method: 'PATCH' }, json: { content, ...(title === undefined ? {} : { title }) } })
 }
 
+/** 워크스페이스의 시험범위 자료 목록 (이전에 올린 자료를 다시 쓸 때) */
+export function listMaterials(workspaceId: number) {
+  return httpClient.request<MaterialResponse[]>({ path: workspacePath(workspaceId, '/materials') })
+}
+
+/** 지문 직접 추가 (분리에서 빠진 지문 등). 맨 뒤에 붙는다 */
+export function addPassage(materialId: number, content: string, title?: string) {
+  return httpClient.request<PassageResponse>({
+    path: `/api/materials/${materialId}/passages`,
+    init: { method: 'POST' },
+    json: { content, ...(title ? { title } : {}) },
+  })
+}
+
+export function deletePassage(passageId: number) {
+  return httpClient.request<void>({ path: `/api/passages/${passageId}`, init: { method: 'DELETE' } })
+}
+
 export function getConfirmedProfile(workspaceId: number) {
   return httpClient.request<ProfileResponse>({
     path: workspacePath(workspaceId, '/profiles/confirmed'),
