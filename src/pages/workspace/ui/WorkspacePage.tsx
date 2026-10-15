@@ -10,7 +10,6 @@ import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import { ExamInsight } from "@/widgets/exam-insight/ui/ExamInsight";
 import { RecentQuestionSets } from "@/widgets/recent-question-sets/ui/RecentQuestionSets";
-import { ReviewPrompt } from "@/widgets/review-prompt/ui/ReviewPrompt";
 import { TeamActivity } from "@/widgets/team-activity/ui/TeamActivity";
 import { WorkspaceOverview } from "@/widgets/workspace-overview/ui/WorkspaceOverview";
 
@@ -222,7 +221,6 @@ export function WorkspacePage() {
 
         <div>
           <TeamActivity items={workspace.teamActivities} />
-          <ReviewPrompt prompt={workspace.reviewPrompt} />
         </div>
       </div>
       {addModal}

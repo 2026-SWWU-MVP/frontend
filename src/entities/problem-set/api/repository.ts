@@ -392,10 +392,6 @@ export function getAcceptedProblems(workspaceId: number) {
   return httpClient.request<ProblemResponse[]>({ path: `${workspacePath(workspaceId, '/problems')}?reviewStatus=ACCEPTED` })
 }
 
-export function getReviewStats(workspaceId: number) {
-  return httpClient.request<Record<string, unknown>>({ path: workspacePath(workspaceId, '/review-stats') })
-}
-
 export function createWorksheet(
   workspaceId: number,
   request: CreateWorksheetRequest,

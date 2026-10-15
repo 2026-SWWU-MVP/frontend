@@ -1,265 +1,205 @@
 import { useEffect, useState } from "react";
-import { reportsRepository } from "@/entities/reports/api/repository";
-import type { ReportData, ReportFilters } from "@/entities/reports/model/types";
-import { Button } from "@/shared/ui/Button/Button";
-import { Icon } from "@/shared/ui/Icon/Icon";
+import { Link } from "react-router-dom";
+
+import { getReviewStats } from "@/entities/reports/api/repository";
+import type { ReviewCounts, ReviewStatsResponse } from "@/entities/reports/model/types";
+import { NoWorkspaceError, workspaceRepository } from "@/entities/workspace/api/repository";
+import type { WorkspaceOption } from "@/entities/workspace/model/types";
+import { setWorkspaceId } from "@/shared/auth/workspace";
+import { formatDateTime } from "@/shared/lib/date";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import "./ReportsPage.css";
 
-const initialFilters: ReportFilters = {
-  period: "2026.10.01 ~ 2026.10.07",
-  school: "전체 학교",
-  subject: "전체 과목",
-};
-function Filter({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="report-filter">
-      <strong>{label}</strong>
-      <span>
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </select>
-        <Icon name="chevron-down" size={14} />
-      </span>
-    </label>
-  );
+function percent(rate: number | null | undefined) {
+  return rate === null || rate === undefined ? "-" : `${Math.round(rate * 100)}%`;
 }
-function MetricCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <section className="report-card metric-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </section>
-  );
+
+function reviewed(counts: ReviewCounts) {
+  return counts.accepted + counts.rejected;
 }
-function TrendChart({ items }: { items: ReportData["trend"] }) {
-  const max = Math.max(...items.map((item) => item.created));
-  return (
-    <section className="report-card trend-chart-card">
-      <div className="report-card-heading">
-        <h2>문제 세트 제작·확정 추이</h2>
-        <span className="report-badge">데모 · 세트 수</span>
-      </div>
-      <div className="chart-legend">
-        <span>
-          <i className="created" />
-          제작
-        </span>
-        <span>
-          <i className="approved" />
-          확정
-        </span>
-      </div>
-      <div className="bar-chart">
-        {items.map((item) => (
-          <div className="bar-group" key={item.label}>
-            <div className="bars">
-              <div
-                className="bar created"
-                style={{ height: `${(item.created / max) * 100}%` }}
-              >
-                <b>{item.created}</b>
-              </div>
-              <div
-                className="bar approved"
-                style={{ height: `${(item.approved / max) * 100}%` }}
-              >
-                <b>{item.approved}</b>
-              </div>
-            </div>
-            <small>{item.label}</small>
-          </div>
-        ))}
-      </div>
-      <p className="chart-note">
-        생성 시점 기준 집계 · 확정은 동일 기간 제작 세트 중 확정된 수
-      </p>
-    </section>
-  );
+
+interface PageData {
+  workspaceId: number;
+  title: string;
+  options: WorkspaceOption[];
+  stats: ReviewStatsResponse;
 }
-function SubjectCard({ subjects }: { subjects: ReportData["subjects"] }) {
-  return (
-    <section className="report-card subject-card">
-      <div className="report-card-heading">
-        <h2>과목별 생성 문항</h2>
-        <span className="report-badge">데모 · 156문항</span>
-      </div>
-      <div className="subject-list">
-        {subjects.map((item) => (
-          <div className="subject-item" key={item.name}>
-            <div>
-              <span>{item.name}</span>
-              <strong>
-                {item.questions}문항 · {item.percentage}%
-              </strong>
-            </div>
-            <div className="subject-progress">
-              <i style={{ width: `${item.percentage}%` }} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="usage">
-        <small>자료 활용 현황</small>
-        <span>활용률 75%</span>
-        <strong>12건 중 9건 활용</strong>
-        <p>활용은 생성 자료 또는 유형 참고로 선택된 이력을 뜻합니다.</p>
-      </div>
-    </section>
-  );
-}
-function SchoolTable({ schools }: { schools: ReportData["schools"] }) {
-  return (
-    <section className="report-card school-table-card">
-      <div className="report-card-heading">
-        <h2>학교별 준비 현황</h2>
-        <span className="report-badge">데모</span>
-      </div>
-      <div className="school-table">
-        <div className="table-head">
-          <span>학교</span>
-          <span>세트</span>
-          <span>문항</span>
-          <span>확정</span>
-        </div>
-        {schools.map((item) => (
-          <div className="table-row" key={item.name}>
-            <strong>{item.name}</strong>
-            <span>{item.sets}개</span>
-            <span>{item.questions}문항</span>
-            <em>{item.approved}개</em>
-          </div>
-        ))}
-      </div>
-      <p className="table-note">
-        같은 학교의 여러 과목과 시험 세트를 합산합니다.
-      </p>
-    </section>
-  );
-}
-function InsightCard({ items }: { items: ReportData["insight"] }) {
-  return (
-    <section className="insight-card">
-      <div className="report-card-heading">
-        <h2>다음 준비를 위한 제안</h2>
-        <span className="insight-badge">데모 인사이트</span>
-      </div>
-      {items.map((item) => (
-        <div className="insight-item" key={item.number}>
-          <strong>
-            {item.number} {item.title}
-          </strong>
-          <p>{item.description}</p>
-        </div>
-      ))}
-    </section>
-  );
-}
+
 export function ReportsPage() {
-  const [filters, setFilters] = useState(initialFilters);
-  const [data, setData] = useState<ReportData | null>(null);
+  const [data, setData] = useState<PageData | null>(null);
+  const [empty, setEmpty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
-    reportsRepository.execute(filters).then(setData);
-  }, [filters]);
-  const update = (key: keyof ReportFilters, value: string) =>
-    setFilters((current) => ({ ...current, [key]: value }));
-  if (!data)
-    return (
-      <PageContainer>
-        <p>리포트를 불러오는 중입니다.</p>
-      </PageContainer>
-    );
+    let active = true;
+    (async () => {
+      const workspace = await workspaceRepository.execute();
+      const stats = await getReviewStats(workspace.id);
+      if (active) setData({ workspaceId: workspace.id, title: workspace.title, options: workspace.options, stats });
+    })().catch((cause: unknown) => {
+      if (!active) return;
+      if (cause instanceof NoWorkspaceError) setEmpty(true);
+      else setError(cause instanceof Error && cause.message ? cause.message : "리포트를 불러오지 못했습니다.");
+    });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  function selectWorkspace(workspaceId: number) {
+    setWorkspaceId(workspaceId);
+    setData(null);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }
+
+  const stats = data?.stats;
+  const total = stats?.total;
+  const jobs = stats?.byJob ?? [];
+  const firstRate = jobs.find((job) => job.counts.acceptanceRate !== null)?.counts.acceptanceRate ?? null;
+  const lastRate = [...jobs].reverse().find((job) => job.counts.acceptanceRate !== null)?.counts.acceptanceRate ?? null;
+
   return (
     <PageContainer>
       <div className="reports-page">
         <div className="reports-heading">
           <div>
-            <h1>준비 과정을 숫자로, 다음 행동은 명확하게</h1>
-            <p>제작·검토 현황과 시험 자료의 구성을 한눈에 확인하세요.</p>
+            <h1>데이터 리포트</h1>
+            <p>AI가 만든 문항을 얼마나 채택했는지 봅니다. 폐기 사유와 수정 내용이 다음 생성에 반영되어, 쓸수록 채택률이 오릅니다.</p>
           </div>
-          <Button variant="secondary">
-            <Icon name="files" size={16} />
-            리포트 내보내기
-          </Button>
+          {data && data.options.length > 1 && (
+            <label className="reports-workspace">
+              <span>워크스페이스</span>
+              <select
+                id="reports-workspace"
+                onChange={(event) => selectWorkspace(Number(event.target.value))}
+                value={data.workspaceId}
+              >
+                {data.options.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
-        <div className="reports-filters">
-          <Filter
-            label="분석 기간"
-            value={filters.period}
-            options={data.filters.periods}
-            onChange={(value) => update("period", value)}
-          />
-          <Filter
-            label="학교"
-            value={filters.school}
-            options={data.filters.schools}
-            onChange={(value) => update("school", value)}
-          />
-          <Filter
-            label="과목"
-            value={filters.subject}
-            options={data.filters.subjects}
-            onChange={(value) => update("subject", value)}
-          />
-          <small>갱신: {data.updatedAt} · 데모 워크스페이스</small>
-        </div>
-        <div className="reports-notice">
-          <Icon name="search" size={16} tone="accent" />
-          모든 수치와 차트는 가상 데모 데이터입니다. 운영 지표이며 학생 성적
-          향상이나 학원 등록 증가를 의미하지 않습니다.
-        </div>
-        <div className="metrics-grid">
-          <MetricCard
-            label="제작된 문제 세트"
-            value={data.metrics.sets}
-            detail={data.metrics.setsDetail}
-          />
-          <MetricCard
-            label="생성 문항"
-            value={data.metrics.questions}
-            detail={data.metrics.questionsDetail}
-          />
-          <MetricCard
-            label="확정 비율"
-            value={data.metrics.approval}
-            detail={data.metrics.approvalDetail}
-          />
-          <MetricCard
-            label="참고 시험 자료"
-            value={data.metrics.sources}
-            detail={data.metrics.sourcesDetail}
-          />
-        </div>
-        <div className="reports-grid">
-          <TrendChart items={data.trend} />
-          <SubjectCard subjects={data.subjects} />
-          <SchoolTable schools={data.schools} />
-          <InsightCard items={data.insight} />
-        </div>
+
+        {error && (
+          <p className="reports-notice reports-notice--error" role="alert">
+            {error}
+          </p>
+        )}
+        {empty && (
+          <p className="reports-notice">
+            워크스페이스가 없습니다. <Link to="/workspace">워크스페이스</Link>에서 학교를 추가해 주세요.
+          </p>
+        )}
+        {!data && !error && !empty && <p className="reports-muted">리포트를 불러오는 중입니다.</p>}
+
+        {total && total.generated === 0 && (
+          <section className="reports-card reports-empty">
+            <h2>아직 생성한 문항이 없습니다</h2>
+            <p>
+              {data?.title}에서 <Link to="/problem-sets">문제를 생성하고 검수</Link>하면 채택률이 여기에 쌓입니다.
+            </p>
+          </section>
+        )}
+
+        {stats && total && total.generated > 0 && (
+          <>
+            <section aria-label="검수 요약" className="reports-metrics">
+              <div className="reports-card reports-metric">
+                <span>채택률</span>
+                <strong>{percent(total.acceptanceRate)}</strong>
+                <small>
+                  채택 {total.accepted} / 검수 {reviewed(total)}
+                </small>
+              </div>
+              <div className="reports-card reports-metric">
+                <span>생성한 문항</span>
+                <strong>{total.generated}</strong>
+                <small>생성 작업 {jobs.length}회</small>
+              </div>
+              <div className="reports-card reports-metric">
+                <span>수정한 문항</span>
+                <strong>{total.edited}</strong>
+                <small>고친 내용은 다음 생성에 반영</small>
+              </div>
+              <div className="reports-card reports-metric">
+                <span>검수 전</span>
+                <strong>{total.pending}</strong>
+                <small>폐기 {total.rejected}</small>
+              </div>
+            </section>
+
+            <section className="reports-card reports-section">
+              <div className="reports-section__heading">
+                <h2>생성 작업별 채택률</h2>
+                {firstRate !== null && lastRate !== null && jobs.length > 1 && (
+                  <span className={lastRate >= firstRate ? "reports-trend reports-trend--up" : "reports-trend"}>
+                    첫 작업 {percent(firstRate)} → 최근 {percent(lastRate)}
+                  </span>
+                )}
+              </div>
+              <ol className="reports-jobs">
+                {jobs.map((job, index) => (
+                  <li key={job.generationJobId}>
+                    <span className="reports-jobs__value">{percent(job.counts.acceptanceRate)}</span>
+                    <span className="reports-jobs__bar">
+                      <span style={{ height: `${Math.max((job.counts.acceptanceRate ?? 0) * 100, 2)}%` }} />
+                    </span>
+                    <strong>{index + 1}회차</strong>
+                    <small>{formatDateTime(job.createdAt)}</small>
+                    <small>
+                      {job.counts.generated}문항 · 검수 전 {job.counts.pending}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section className="reports-card reports-section">
+              <h2>유형별</h2>
+              <div className="reports-table-wrap">
+                <table className="reports-table">
+                  <thead>
+                    <tr>
+                      <th>유형</th>
+                      <th>생성</th>
+                      <th>채택</th>
+                      <th>폐기</th>
+                      <th>수정</th>
+                      <th>검수 전</th>
+                      <th>채택률</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.byType.map((item) => (
+                      <tr key={item.type}>
+                        <td>{item.label}</td>
+                        <td>{item.counts.generated}</td>
+                        <td>{item.counts.accepted}</td>
+                        <td>{item.counts.rejected}</td>
+                        <td>{item.counts.edited}</td>
+                        <td>{item.counts.pending}</td>
+                        <td>
+                          <span className="reports-rate">
+                            <span className="reports-rate__track">
+                              <span style={{ width: `${(item.counts.acceptanceRate ?? 0) * 100}%` }} />
+                            </span>
+                            {percent(item.counts.acceptanceRate)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </PageContainer>
   );
