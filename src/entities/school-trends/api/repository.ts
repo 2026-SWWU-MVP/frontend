@@ -1,22 +1,24 @@
-import { createMockRepository } from "@/shared/api/repositories";
-import type { Repository } from "@/shared/api/types";
-import { schoolTrendsMockResponse } from "@/entities/school-trends/mocks/data";
+import { httpClient } from "@/shared/api/httpClient";
+
 import type {
-  SchoolTrendFilters,
-  SchoolTrendsResponse,
+  SchoolExamResponse,
+  SchoolTrendResponse,
+  SchoolTrendSummaryResponse,
 } from "@/entities/school-trends/model/types";
-export const schoolTrendsRepository: Repository<
-  SchoolTrendFilters,
-  SchoolTrendsResponse
-> = createMockRepository(async (filters) => {
-  const query = filters.query.trim().toLowerCase();
-  const items = schoolTrendsMockResponse.items.filter(
-    (item) =>
-      (!query || `${item.school} ${item.exam}`.toLowerCase().includes(query)) &&
-      (filters.school === "전체 학교" || item.school === filters.school) &&
-      (filters.subject === "전체 과목" ||
-        item.gradeSubject.includes(filters.subject)) &&
-      (filters.exam === "전체 시험" || item.exam === filters.exam),
-  );
-  return { ...schoolTrendsMockResponse, items };
-});
+
+/** GET /api/workspaces/{id}/school-trends - 워크스페이스의 학교·학년 경향 */
+export function getSchoolTrends(workspaceId: number) {
+  return httpClient.request<SchoolTrendResponse>({ path: `/api/workspaces/${workspaceId}/school-trends` });
+}
+
+/** GET /api/workspaces/{id}/school-trends/summary - 요약 문장 (처음엔 수 초, 이후 캐시) */
+export function getSchoolTrendSummary(workspaceId: number) {
+  return httpClient.request<SchoolTrendSummaryResponse>({
+    path: `/api/workspaces/${workspaceId}/school-trends/summary`,
+  });
+}
+
+/** GET /api/schools/{schoolId}/exams?grade= - 학교 DB 기출 회차 (최신순) */
+export function getSchoolExams(schoolId: number, grade: number) {
+  return httpClient.request<SchoolExamResponse[]>({ path: `/api/schools/${schoolId}/exams?grade=${grade}` });
+}

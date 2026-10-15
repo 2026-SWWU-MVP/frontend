@@ -1,285 +1,295 @@
-import { useEffect, useMemo, useState } from "react";
-import { schoolTrendsRepository } from "@/entities/school-trends/api/repository";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
+import {
+  getSchoolExams,
+  getSchoolTrendSummary,
+  getSchoolTrends,
+} from "@/entities/school-trends/api/repository";
 import type {
-  SchoolTrendFilters,
-  TrendItem,
+  SchoolExamResponse,
+  SchoolTrendResponse,
+  SchoolTrendSummaryResponse,
 } from "@/entities/school-trends/model/types";
-import { Button } from "@/shared/ui/Button/Button";
+import { questionTypeLabel } from "@/entities/problem-set/model/labels";
+import { NoWorkspaceError, workspaceRepository } from "@/entities/workspace/api/repository";
+import type { WorkspaceOption } from "@/entities/workspace/model/types";
+import { setWorkspaceId } from "@/shared/auth/workspace";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import "./SchoolTrendsPage.css";
 
-const initialFilters: SchoolTrendFilters = {
-  query: "",
-  school: "전체 학교",
-  subject: "전체 과목",
-  exam: "전체 시험",
+const confidenceLabels: Record<SchoolTrendResponse["confidence"], string> = {
+  NONE: "기출 없음",
+  LOW: "신뢰도 낮음 (1회분)",
+  MEDIUM: "신뢰도 보통 (2~3회분)",
+  HIGH: "신뢰도 높음 (4회분 이상)",
 };
-function TrendRow({
-  item,
-  active,
-  onClick,
-}: {
-  item: TrendItem;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={`trend-row${active ? " is-active" : ""}`}
-      onClick={onClick}
-      type="button"
-    >
-      <span>
-        <strong>{item.school}</strong>
-        <small>{item.gradeSubject}</small>
-      </span>
-      <span>{item.exam}</span>
-      <span>{item.size}</span>
-      <span>{item.updatedAt}</span>
-    </button>
-  );
+
+function percent(ratio: number | null | undefined) {
+  return ratio === null || ratio === undefined ? "-" : `${Math.round(ratio * 100)}%`;
 }
-function SelectField({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="trend-filter">
-      <strong>{label}</strong>
-      <span className="trend-select">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </select>
-        <Icon name="chevron-down" size={14} />
-      </span>
-    </label>
-  );
+
+function examTitle(exam: SchoolExamResponse) {
+  return `${exam.examYear}년 ${exam.semester}학기 ${exam.examType === "MIDTERM" ? "중간" : "기말"}`;
 }
-function DetailCard({ item }: { item: TrendItem }) {
-  return (
-    <section className="trend-card trend-detail-card">
-      <div className="card-title-row">
-        <h2>
-          {item.school} · {item.gradeSubject.split(" · ")[1]}
-        </h2>
-        <span className="status-badge">선택됨</span>
-      </div>
-      <p className="detail-subtitle">
-        {item.gradeSubject} · {item.exam} · 예시 학교
-      </p>
-      <div className="detail-badges">
-        <span>사용자 자료 {item.sourceCount}건</span>
-        <span className={item.reviewComplete ? "success" : ""}>
-          {item.reviewComplete ? "교사 확인 완료" : "교사 확인 대기"}
-        </span>
-      </div>
-      <div className="distribution-title">
-        <strong>문항 유형 분포</strong>
-        <small>데모 · {item.size.split(" · ")[1]}</small>
-      </div>
-      <div className="distribution-list">
-        {item.distribution.map((entry) => (
-          <div className="distribution-item" key={entry.label}>
-            <div>
-              <span>{entry.label}</span>
-              <strong>
-                {entry.percentage}% · {entry.count}문항
-              </strong>
-            </div>
-            <div className="progress">
-              <i style={{ width: `${entry.percentage * 2.5}%` }} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="insight-box">
-        <strong>본문 근거 + 사례 적용을 함께 준비</strong>
-        <p>{item.insight}</p>
-      </div>
-      <Button className="make-button" variant="primary">
-        이 경향으로 문제 만들기
-      </Button>
-    </section>
-  );
+
+interface PageData {
+  workspaceId: number;
+  options: WorkspaceOption[];
+  trends: SchoolTrendResponse;
+  exams: SchoolExamResponse[];
 }
+
 export function SchoolTrendsPage() {
-  const [filters, setFilters] = useState(initialFilters);
-  const [items, setItems] = useState<TrendItem[]>([]);
-  const [selectedId, setSelectedId] = useState("hanbit-korean");
-  const [totals, setTotals] = useState({
-    totalSchools: 4,
-    totalSubjects: 3,
-    totalUploads: 12,
-  });
+  const [data, setData] = useState<PageData | null>(null);
+  const [summary, setSummary] = useState<SchoolTrendSummaryResponse | null>(null);
+  const [summaryFailed, setSummaryFailed] = useState(false);
+  const [empty, setEmpty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
-    schoolTrendsRepository.execute(filters).then((response) => {
-      setItems(response.items);
-      setTotals(response);
+    let active = true;
+    (async () => {
+      const workspace = await workspaceRepository.execute();
+      const trends = await getSchoolTrends(workspace.id);
+      const exams = trends.examCount > 0 ? await getSchoolExams(trends.schoolId, trends.grade) : [];
+      if (!active) return;
+      setData({ workspaceId: workspace.id, options: workspace.options, trends, exams });
+      if (trends.examCount === 0) return;
+      // 요약은 LLM이라 처음엔 수 초 걸린다. 통계를 먼저 보여주고 따로 불러온다
+      getSchoolTrendSummary(workspace.id)
+        .then((result) => active && setSummary(result))
+        .catch(() => active && setSummaryFailed(true));
+    })().catch((cause: unknown) => {
+      if (!active) return;
+      if (cause instanceof NoWorkspaceError) setEmpty(true);
+      else setError(cause instanceof Error && cause.message ? cause.message : "학교 경향을 불러오지 못했습니다.");
     });
-  }, [filters]);
-  const selected = useMemo(
-    () => items.find((item) => item.id === selectedId) ?? items[0],
-    [items, selectedId],
-  );
-  const updateFilter = (key: keyof SchoolTrendFilters, value: string) =>
-    setFilters((current) => ({ ...current, [key]: value }));
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  function selectWorkspace(workspaceId: number) {
+    setWorkspaceId(workspaceId);
+    setData(null);
+    setSummary(null);
+    setSummaryFailed(false);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }
+
+  const trends = data?.trends;
+  const maxTypeRatio = Math.max(...(trends?.types.map((item) => item.ratio) ?? [0]), 0.01);
+  const mixEntries = Object.entries(trends?.typeMixPerPassage ?? {}).filter(([, count]) => count > 0);
+
   return (
     <PageContainer>
       <div className="school-trends-page">
         <div className="school-trends-heading">
           <div>
-            <h1>쌓인 자료가, 다음 문제의 기준이 됩니다</h1>
-            <p>
-              학교·시험별 기출 자료를 모으고, 교사가 확인한 출제 경향을 생성에
-              반영하세요.
-            </p>
+            <h1>학교·시험 경향</h1>
+            <p>모든 학원이 올린 기출에서 뽑은 통계입니다. 다른 학원 기출의 원문은 보이지 않습니다.</p>
           </div>
-          <Button variant="primary">
-            <Icon name="plus" size={16} />
-            학교·시험 자료 추가
-          </Button>
-        </div>
-        <div className="notice">
-          <Icon name="search" size={16} tone="accent" />
-          <span>
-            특정 학교나 과목에 제한되지 않습니다. 새 학교·과목을 직접 등록하고,
-            자료가 없는 시험도 기본 설정으로 시작할 수 있어요.
-          </span>
-        </div>
-        <section className="trend-card filters-card">
-          <label className="trend-filter search-filter">
-            <strong>학교·시험 검색</strong>
-            <input
-              value={filters.query}
-              onChange={(event) => updateFilter("query", event.target.value)}
-              placeholder="학교명 또는 시험명으로 검색"
-            />
-          </label>
-          <SelectField
-            label="학교"
-            value={filters.school}
-            options={[
-              "전체 학교",
-              "한빛고등학교",
-              "세종중학교",
-              "다온고등학교",
-              "은솔중학교",
-            ]}
-            onChange={(value) => updateFilter("school", value)}
-          />
-          <SelectField
-            label="과목"
-            value={filters.subject}
-            options={["전체 과목", "국어", "수학", "통합과학"]}
-            onChange={(value) => updateFilter("subject", value)}
-          />
-          <SelectField
-            label="시험 구분"
-            value={filters.exam}
-            options={["전체 시험", "1학기 중간", "1학기 기말", "2학기 중간"]}
-            onChange={(value) => updateFilter("exam", value)}
-          />
-        </section>
-        <div className="trends-grid">
-          <div>
-            <section className="trend-card registered-card">
-              <div className="card-title-row">
-                <h2>등록된 학교·시험</h2>
-                <span className="meta-badge">데모 · 5개 분류</span>
-              </div>
-              <div className="trend-table-head">
-                <span>학교 · 과목</span>
-                <span>시험</span>
-                <span>자료 규모</span>
-                <span>갱신일</span>
-              </div>
-              <div className="trend-rows">
-                {items.map((item) => (
-                  <TrendRow
-                    active={selected?.id === item.id}
-                    item={item}
-                    key={item.id}
-                    onClick={() => setSelectedId(item.id)}
-                  />
+          {data && data.options.length > 1 && (
+            <label className="trend-workspace">
+              <span>워크스페이스</span>
+              <select
+                className="trend-select"
+                id="trend-workspace"
+                onChange={(event) => selectWorkspace(Number(event.target.value))}
+                value={data.workspaceId}
+              >
+                {data.options.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
                 ))}
-                {items.length === 0 && (
-                  <p className="empty-message">조건에 맞는 자료가 없습니다.</p>
-                )}
-              </div>
-              <div className="list-footer">
-                총 {totals.totalSchools}개 학교 · {totals.totalSubjects}개 과목
-                · 업로드 {totals.totalUploads}건 <span>1 / 1 〈 〉</span>
-              </div>
-            </section>
-            <section className="trend-card source-card">
-              <h2>자료의 출처와 분석을 구분합니다</h2>
-              <div className="source-columns">
-                <div>
-                  <span className="source-label">사용자 업로드</span>
-                  <p>
-                    학원에서 올린 시험지 원본과 문항 정보입니다. 업로드한 팀원과
-                    자료 권한을 함께 기록합니다.
-                  </p>
-                </div>
-                <div>
-                  <span className="source-label accent">
-                    AI 분석 · 교사 확인
-                  </span>
-                  <p>
-                    유형·난이도·주제 분류는 분석 결과입니다. 근거를 확인하고
-                    수정한 경향만 생성 기준으로 활용하세요.
-                  </p>
-                </div>
-              </div>
-              <p className="source-note">
-                자료가 누적되면 경향의 근거가 보강될 수 있습니다. 과거 유형은
-                다음 시험의 출제를 보장하지 않습니다.
-              </p>
-            </section>
+              </select>
+            </label>
+          )}
+        </div>
+
+        {error && (
+          <p className="notice notice--error" role="alert">
+            {error}
+          </p>
+        )}
+        {empty && (
+          <div className="notice">
+            <Icon name="database" size={16} tone="accent" />
+            <span>
+              워크스페이스가 없습니다. <Link to="/workspace">워크스페이스</Link>에서 학교를 추가해 주세요.
+            </span>
           </div>
-          <div>
-            {selected ? (
-              <DetailCard item={selected} />
-            ) : (
-              <section className="trend-card">
-                <p className="empty-message">자료를 선택해 주세요.</p>
-              </section>
-            )}
-            <section className="trend-card evidence-card">
-              <div className="card-title-row">
-                <h2>분석 근거 자료</h2>
-                <span className="meta-badge">데모</span>
+        )}
+        {!data && !error && !empty && <p className="trend-muted">학교 경향을 불러오는 중입니다.</p>}
+
+        {trends && (
+          <>
+            <section className="trend-card trend-hero">
+              <div className="trend-hero__title">
+                <h2>
+                  {trends.schoolName} {trends.grade}학년
+                </h2>
+                <span className={`trend-confidence trend-confidence--${trends.confidence}`}>
+                  {confidenceLabels[trends.confidence]}
+                </span>
               </div>
-              {[
-                "2026년 1학기 중간 · 20문항",
-                "2025년 1학기 중간 · 20문항",
-                "2024년 1학기 중간 · 20문항",
-              ].map((title) => (
-                <div className="evidence-row" key={title}>
-                  <Icon name="files" size={16} />
-                  <div>
-                    <strong>{title}</strong>
-                    <small>사례 적용 6문항 · 대표 13·15번 · 김서현 확인</small>
+              <p className="trend-muted">
+                {trends.basis}
+                {trends.latestExam && ` · 가장 최근 ${trends.latestExam}`}
+              </p>
+
+              {trends.examCount === 0 ? (
+                <p className="trend-empty">
+                  아직 이 학교·학년의 기출이 없습니다. <Link to="/problem-sets">기출을 올리면</Link> 경향이 쌓이고, 다른 학원도
+                  통계를 함께 볼 수 있습니다.
+                </p>
+              ) : summary?.headline ? (
+                <div className="trend-summary">
+                  <strong>{summary.headline}</strong>
+                  <ul>
+                    {summary.points.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                  {summary.prepTips.length > 0 && (
+                    <div className="trend-tips">
+                      <span>대비 팁</span>
+                      <ul>
+                        {summary.prepTips.map((tip) => (
+                          <li key={tip}>{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="trend-muted">
+                  {summaryFailed ? "요약을 만들지 못했습니다. 아래 통계를 참고해 주세요." : "AI가 경향을 요약하고 있습니다. 처음에는 수 초 걸립니다."}
+                </p>
+              )}
+            </section>
+
+            {trends.examCount > 0 && (
+              <>
+                <section aria-label="경향 요약 수치" className="trend-metrics">
+                  <div className="trend-card trend-metric">
+                    <span>서술형 문항 비중</span>
+                    <strong>{percent(trends.subjectiveRatio)}</strong>
+                    <small>최근 회차에 가중치</small>
+                  </div>
+                  <div className="trend-card trend-metric">
+                    <span>서술형 배점 비중</span>
+                    <strong>{percent(trends.subjectivePointsRatio)}</strong>
+                    <small>배점이 있는 회차 기준</small>
+                  </div>
+                  <div className="trend-card trend-metric">
+                    <span>회차당 평균 문항</span>
+                    <strong>{trends.averageQuestions.toFixed(1)}</strong>
+                    <small>기출 {trends.examCount}회분</small>
+                  </div>
+                  <div className="trend-card trend-metric">
+                    <span>올린 학원</span>
+                    <strong>{trends.contributorCount}곳</strong>
+                    <small>원문은 공유되지 않음</small>
+                  </div>
+                </section>
+
+                <div className="trend-grid">
+                  <section className="trend-card trend-section">
+                    <h3>유형별 비중</h3>
+                    <ul className="trend-bars">
+                      {trends.types.map((item) => (
+                        <li key={item.type}>
+                          <span className="trend-bars__label">{item.label}</span>
+                          <span className="trend-bars__track">
+                            <span style={{ width: `${(item.ratio / maxTypeRatio) * 100}%` }} />
+                          </span>
+                          <span className="trend-bars__value">{percent(item.ratio)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <div className="trend-column">
+                    <section className="trend-card trend-section">
+                      <h3>변화</h3>
+                      {trends.highlights.length > 0 ? (
+                        <ul className="trend-list">
+                          {trends.highlights.map((highlight) => (
+                            <li key={highlight}>{highlight}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="trend-muted">눈에 띄는 변화가 없습니다.</p>
+                      )}
+                    </section>
+
+                    <section className="trend-card trend-section">
+                      <h3>지문당 서술형 구성</h3>
+                      <p className="trend-muted">문제 생성 기본값의 참고가 됩니다.</p>
+                      <div className="trend-chips">
+                        {mixEntries.map(([type, count]) => (
+                          <span key={type}>
+                            {questionTypeLabel(type)} {count}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
                   </div>
                 </div>
-              ))}
-              <a href="#evidence">원본과 분석 결과 확인 →</a>
-            </section>
-          </div>
-        </div>
+
+                <section className="trend-card trend-section">
+                  <h3>연도별 서술형 비중</h3>
+                  <ul className="trend-years">
+                    {trends.byYear.map((year) => (
+                      <li key={year.year}>
+                        <span className="trend-years__value">{percent(year.subjectiveRatio)}</span>
+                        <span className="trend-years__bar">
+                          <span style={{ height: `${Math.max(year.subjectiveRatio * 100, 2)}%` }} />
+                        </span>
+                        <strong>{year.year}</strong>
+                        <small>{year.examCount}회분</small>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="trend-card trend-section">
+                  <h3>이 학교 기출 회차</h3>
+                  <div className="trend-table-wrap">
+                    <table className="trend-table">
+                      <thead>
+                        <tr>
+                          <th>회차</th>
+                          <th>문항</th>
+                          <th>서술형</th>
+                          <th>서술형 비중</th>
+                          <th>올린 학원</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.exams.map((exam) => (
+                          <tr key={exam.id}>
+                            <td>{examTitle(exam)}</td>
+                            <td>{exam.stats?.totalQuestions ?? "-"}</td>
+                            <td>{exam.stats?.subjectiveCount ?? "-"}</td>
+                            <td>{percent(exam.stats?.subjectiveRatio)}</td>
+                            <td>{exam.contributorCount}곳</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </>
+            )}
+          </>
+        )}
       </div>
     </PageContainer>
   );
