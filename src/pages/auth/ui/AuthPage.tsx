@@ -12,7 +12,7 @@ function Logo() {
   return (
     <Link className="auth-logo" to="/">
       <span>▥</span>
-      <strong>내신뚝딱</strong>
+      <strong>내신뿌뿌</strong>
     </Link>
   );
 }
@@ -103,7 +103,7 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
     <div className="auth-page">
       <header className="auth-header">
         <Logo />
-        <Link to="/">내신뚝딱 소개 ↗</Link>
+        <Link to="/">내신뿌뿌 소개 ↗</Link>
       </header>
       <main className="auth-content">
         <span className="auth-eyebrow">
@@ -116,7 +116,7 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
         </p>
         <section className="auth-card">
           <form onSubmit={submit}>
-            <h2>{isSignup ? "내신뚝딱 시작하기" : "다시 만나 반가워요"}</h2>
+            <h2>{isSignup ? "내신뿌뿌 시작하기" : "다시 만나 반가워요"}</h2>
             <p>
               {isSignup
                 ? "선생님의 자료가 더 좋은 문제의 시작이 됩니다."
@@ -179,7 +179,7 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
           </form>
         </section>
       </main>
-      <footer>© 2026 내신뚝딱. All rights reserved.</footer>
+      <footer>© 2026 내신뿌뿌. All rights reserved.</footer>
     </div>
   );
 }
