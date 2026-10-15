@@ -3,6 +3,7 @@ import type { Repository } from '@/shared/api/types'
 
 import type { WorkspaceOption, WorkspaceResponse } from '@/entities/workspace/model/types'
 import { getWorkspaceId, MissingWorkspaceIdError, setWorkspaceId } from '@/shared/auth/workspace'
+import { formatShortDateTime } from '@/shared/lib/date'
 
 interface WorkspaceApiResponse {
   id: number
@@ -95,11 +96,11 @@ function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[
       actionLabel: '문제 세트 만들기',
     },
     stats: [
-      { label: '기출 자료', value: `${summary.pastExamCount ?? 0}건`, detail: 'API 응답 기준' },
+      { label: '기출 자료', value: `${summary.pastExamCount ?? 0}건`, detail: '올린 기출 회차' },
       { label: '출제 프로필', value: formatProfileStatus(summary.profileStatus), detail: `확정 버전 ${summary.confirmedProfileVersion ?? '-'}` },
-      { label: '최근 시험지', value: latestTitle ?? '없음', detail: summary.latestWorksheet?.createdAt ?? 'API 응답 기준' },
+      { label: '최근 시험지', value: latestTitle ?? '없음', detail: latestTitle ? formatShortDateTime(summary.latestWorksheet?.createdAt) : '아직 만든 시험지가 없습니다' },
     ],
-    recentQuestionSets: latestTitle ? [{ title: latestTitle, detail: `워크스페이스 ${workspace.id}`, status: 'complete', statusLabel: '확인', updatedAt: summary.latestWorksheet?.createdAt ?? '-' }] : [],
+    recentQuestionSets: latestTitle ? [{ title: latestTitle, detail: '최근에 만든 시험지', status: 'complete', statusLabel: '완성', updatedAt: formatShortDateTime(summary.latestWorksheet?.createdAt) }] : [],
     insight: { title: '학교 출제 경향', badgeLabel: 'API 데이터', headline: '학교 경향에서 다음 출제를 준비하세요', description: '학교 경향 상세는 API 연동 후 표시됩니다.', actionLabel: '학교 경향 보기', metrics: [] },
   }
 }

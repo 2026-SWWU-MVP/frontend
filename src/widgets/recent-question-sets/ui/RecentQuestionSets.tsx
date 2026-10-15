@@ -1,5 +1,4 @@
 import { Badge, type BadgeTone } from "@/shared/ui/Badge/Badge";
-import { Button } from "@/shared/ui/Button/Button";
 import type { RecentQuestionSet } from "@/entities/workspace/model/types";
 
 import "./RecentQuestionSets.css";
@@ -19,13 +18,13 @@ export function RecentQuestionSets({ items }: RecentQuestionSetsProps) {
     <section className="workspace-panel recent-question-sets">
       <header className="workspace-panel__header">
         <h2>최근 문제 세트</h2>
-        <Button variant="text">전체 보기 →</Button>
       </header>
       <div className="recent-question-sets__columns" role="row">
         <span>문제 세트</span>
         <span>진행 상태</span>
         <span>최근 수정</span>
       </div>
+      {items.length === 0 && <p className="workspace-panel__caption">아직 만든 시험지가 없습니다.</p>}
       <div className="recent-question-sets__list">
         {items.map((item) => (
           <article className="recent-question-set" key={item.title}>
@@ -38,9 +37,6 @@ export function RecentQuestionSets({ items }: RecentQuestionSetsProps) {
           </article>
         ))}
       </div>
-      <p className="workspace-panel__caption">
-        학교평과 모든 자료는 화면 설명을 위한 가상 예시입니다.
-      </p>
     </section>
   );
 }
