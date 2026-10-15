@@ -45,3 +45,69 @@
   font-size: var(--font-size-13);
   line-height: var(--line-height-165);
 }
+
+/* 모바일 (#35) */
+.app-header__menu {
+  display: none;
+}
+
+.app-header .breadcrumbs {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    gap: var(--spacing-12);
+    height: 56px;
+    padding: 0 var(--spacing-16);
+  }
+
+  .app-header__menu {
+    display: inline-flex;
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: var(--stroke-width-1) solid var(--color-border-default);
+    border-radius: var(--radius-8);
+    background: var(--color-surface-default);
+    cursor: pointer;
+  }
+
+  .app-header__menu span {
+    display: block;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--color-text-primary);
+  }
+
+  .app-header .breadcrumbs {
+    flex: 1;
+  }
+
+  /* 학원 이름은 서랍에 있으니 지금 화면 이름만 */
+  .app-header .breadcrumbs__item:not(:last-child) {
+    display: none;
+  }
+
+  .app-header .breadcrumbs__item:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-header__badge,
+  .app-header__help {
+    display: none;
+  }
+
+  .app-header__actions {
+    gap: var(--spacing-12);
+  }
+}

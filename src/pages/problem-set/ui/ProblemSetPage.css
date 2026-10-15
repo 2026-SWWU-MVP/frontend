@@ -1327,3 +1327,15 @@
 .paper-body {
   white-space: pre-line;
 }
+
+/* 휴대폰 (#35) */
+@media (max-width: 480px) {
+  .metrics-grid,
+  .check-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .worksheet-picker li {
+    align-items: flex-start;
+  }
+}

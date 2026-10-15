@@ -5,7 +5,7 @@ import { getAuthSession } from "@/shared/auth/session";
 import { getStoredAcademy } from "@/shared/academy/academy";
 import { useAcademyState } from "@/shared/academy/state";
 import "./Header.css";
-export function Header() {
+export function Header({ menuOpen = false, onMenuClick }: { menuOpen?: boolean; onMenuClick?: () => void }) {
   const location = useLocation();
   const userId = getAuthSession()?.userId ?? null;
   const academyState = useAcademyState(userId);
@@ -28,6 +28,17 @@ export function Header() {
 
   return (
     <header className="app-header">
+      <button
+        aria-expanded={menuOpen}
+        aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
+        className="app-header__menu"
+        onClick={onMenuClick}
+        type="button"
+      >
+        <span />
+        <span />
+        <span />
+      </button>
       <Breadcrumbs
         items={[{ label: academyName }, { label: pageLabel }]}
       />
