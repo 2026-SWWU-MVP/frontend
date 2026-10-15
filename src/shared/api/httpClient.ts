@@ -116,7 +116,7 @@ export function createHttpClient(
   const userIdProvider = options.userIdProvider ?? getStoredUserId
 
   return {
-    async request<TResponse>({ path, init, json, responseType, userId }: ApiRequest) {
+    async request<TResponse>({ path, init, json, responseType, userId, onHeaders }: ApiRequest) {
       const headers = new Headers(init?.headers)
       // 요청에서 Accept를 정했으면 그대로 둔다 (예: 로고 이미지)
       if (!headers.has('Accept')) {
@@ -149,6 +149,7 @@ export function createHttpClient(
         throw new ApiNetworkError(error)
       }
 
+      if (response.ok) onHeaders?.(response.headers)
       return parseResponse<TResponse>(response, responseType)
     },
   }

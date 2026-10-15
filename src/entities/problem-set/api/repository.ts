@@ -220,11 +220,45 @@ export interface UpdateProblemRequest {
   rejectReason?: string
 }
 
+/** 시험지 목록용 요약 */
+export interface WorksheetSummary {
+  id: number
+  workspaceId: number
+  title: string
+  headerText: string | null
+  showLogo: boolean
+  problemCount: number
+  createdByName: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** 시험지 본문. 지문 하나 + 그 지문의 문항들(번호는 지문마다 1부터)이 순서대로 나온다 */
 export interface WorksheetResponse {
   id: number
   workspaceId: number
   title: string
-  problemCount?: number
+  headerText: string | null
+  showLogo: boolean
+  problemCount: number
+  sections: Array<{
+    order: number
+    passageId: number | null
+    passageTitle: string | null
+    passageText: string
+    items: Array<{ no: number; problem: ProblemResponse }>
+  }>
+  createdByName: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** 보낸 항목만 바뀐다. problemIds를 보내면 문항 구성을 통째로 바꾼다 */
+export interface UpdateWorksheetRequest {
+  title?: string
+  headerText?: string
+  showLogo?: boolean
+  problemIds?: number[]
 }
 
 export interface CreateWorksheetRequest {
@@ -421,13 +455,46 @@ export function createWorksheet(
   })
 }
 
-export function downloadWorksheetPdf(worksheetId: number, answer = false) {
-  return httpClient.request<Blob>({
+/** Content-Disposition의 filename*(UTF-8) 또는 filename */
+function filenameFrom(disposition: string | null) {
+  if (!disposition) return null
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      return null
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)
+  return plain ? plain[1].trim() : null
+}
+
+/** 문제지(answer=false)·정답지 PDF. 파일 이름은 서버가 정한 이름 */
+export async function downloadWorksheetPdf(worksheetId: number, answer = false) {
+  let filename: string | null = null
+  const blob = await httpClient.request<Blob>({
     path: `/api/worksheets/${worksheetId}/${answer ? 'answer-pdf' : 'pdf'}`,
     responseType: 'blob',
+    onHeaders: (headers) => {
+      filename = filenameFrom(headers.get('Content-Disposition'))
+    },
   })
+  return { blob, filename: filename ?? (answer ? 'answer-sheet.pdf' : 'worksheet.pdf') }
 }
 
 export function getWorksheet(worksheetId: number) {
-  return httpClient.request<Record<string, unknown>>({ path: `/api/worksheets/${worksheetId}` })
+  return httpClient.request<WorksheetResponse>({ path: `/api/worksheets/${worksheetId}` })
+}
+
+export function listWorksheets(workspaceId: number) {
+  return httpClient.request<WorksheetSummary[]>({ path: workspacePath(workspaceId, '/worksheets') })
+}
+
+export function updateWorksheet(worksheetId: number, request: UpdateWorksheetRequest) {
+  return httpClient.request<WorksheetResponse>({ path: `/api/worksheets/${worksheetId}`, init: { method: 'PATCH' }, json: request })
+}
+
+export function deleteWorksheet(worksheetId: number) {
+  return httpClient.request<void>({ path: `/api/worksheets/${worksheetId}`, init: { method: 'DELETE' } })
 }
