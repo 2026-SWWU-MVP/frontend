@@ -30,9 +30,10 @@ const secondaryNavigation: NavigationItem[] = [
   { icon: "settings", label: "워크스페이스 설정", path: "/settings" },
 ];
 
-function NavigationItemView({ item }: { item: NavigationItem }) {
+function NavigationItemView({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
   return (
     <NavLink
+      onClick={onNavigate}
       className={({ isActive }) =>
         `sidebar__navigation-item${isActive ? " is-active" : ""}`
       }
@@ -54,7 +55,7 @@ function NavigationItemView({ item }: { item: NavigationItem }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const session = getAuthSession();
   const userId = session?.userId ?? null;
   const academyState = useAcademyState(userId);
@@ -101,7 +102,7 @@ export function Sidebar() {
 
         <nav aria-label="주요 메뉴" className="sidebar__navigation">
           {primaryNavigation.map((item) => (
-            <NavigationItemView item={item} key={item.label} />
+            <NavigationItemView item={item} key={item.label} onNavigate={onNavigate} />
           ))}
         </nav>
 
@@ -114,7 +115,7 @@ export function Sidebar() {
               className="sidebar__secondary-navigation"
             >
               {secondaryNavigation.map((item) => (
-                <NavigationItemView item={item} key={item.label} />
+                <NavigationItemView item={item} key={item.label} onNavigate={onNavigate} />
               ))}
             </nav>
           </>

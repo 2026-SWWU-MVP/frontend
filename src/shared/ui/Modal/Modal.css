@@ -12,7 +12,7 @@
 .modal {
   width: 100%;
   max-width: 520px;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
   overflow-y: auto;
   padding: var(--spacing-24) var(--spacing-28) var(--spacing-28);
   border-radius: var(--radius-12);

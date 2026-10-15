@@ -4,3 +4,15 @@
   margin: 0 auto;
   padding: var(--spacing-40);
 }
+
+@media (max-width: 1024px) {
+  .page-container {
+    padding: var(--spacing-24);
+  }
+}
+
+@media (max-width: 767px) {
+  .page-container {
+    padding: var(--spacing-20) var(--spacing-16);
+  }
+}
