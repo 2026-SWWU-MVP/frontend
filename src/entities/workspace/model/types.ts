@@ -22,13 +22,6 @@ export interface RecentQuestionSet {
   updatedAt: string;
 }
 
-export interface TeamActivity {
-  initials: string;
-  memberName: string;
-  message: string;
-  time: string;
-}
-
 export interface InsightMetric {
   label: string;
   value: string;
@@ -54,7 +47,6 @@ export interface WorkspaceResponse {
   preparation: PreparationBanner;
   stats: WorkspaceStat[];
   recentQuestionSets: RecentQuestionSet[];
-  teamActivities: TeamActivity[];
   insight: {
     title: string;
     badgeLabel: string;
@@ -62,10 +54,5 @@ export interface WorkspaceResponse {
     description: string;
     actionLabel: string;
     metrics: InsightMetric[];
-  };
-  reviewPrompt: {
-    title: string;
-    description: string;
-    actionLabel: string;
   };
 }

@@ -51,12 +51,8 @@ export interface ProblemSetResponse {
   prompt?: string
 }
 
-export function buildProblemSetName(
-  school: string,
-  grade: string,
-  subject: string,
-  exam: string,
-) {
-  if (!school || !grade || !subject || !exam) return ""
-  return `${school}_${grade}학년_${subject}_${exam}`
+/** 문제 세트 이름. 예) 압구정고 1학년 중간고사 대비 (서비스는 영어 전용) */
+export function buildProblemSetName(workspaceTitle: string, exam: string) {
+  if (!workspaceTitle || !exam) return ""
+  return `${workspaceTitle} ${exam} 대비`
 }

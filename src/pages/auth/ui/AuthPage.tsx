@@ -147,7 +147,7 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
               value={form.password}
               onChange={update("password")}
               placeholder={
-                isSignup ? "영문, 숫자 포함 8자 이상" : "비밀번호를 입력하세요"
+                isSignup ? "4자 이상" : "비밀번호를 입력하세요"
               }
               type="password"
               required
@@ -166,14 +166,6 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
               <p className="auth-error" role="alert">
                 {error}
               </p>
-            )}
-            {!isSignup && (
-              <div className="auth-options">
-                <label>
-                  <input type="checkbox" /> 로그인 상태 유지
-                </label>
-                <a href="#password">비밀번호 찾기</a>
-              </div>
             )}
             <button className="auth-submit" disabled={loading}>
               {loading ? "처리 중..." : isSignup ? "회원가입" : "로그인"}

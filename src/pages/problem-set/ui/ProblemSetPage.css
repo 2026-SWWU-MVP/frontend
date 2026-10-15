@@ -1339,3 +1339,16 @@
     align-items: flex-start;
   }
 }
+
+.info-card__value {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.info-card__value a {
+  margin-left: 6px;
+  color: var(--color-action-primary);
+  font-size: 12px;
+  font-weight: 400;
+}

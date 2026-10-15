@@ -100,9 +100,7 @@ function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[
       { label: '최근 시험지', value: latestTitle ?? '없음', detail: summary.latestWorksheet?.createdAt ?? 'API 응답 기준' },
     ],
     recentQuestionSets: latestTitle ? [{ title: latestTitle, detail: `워크스페이스 ${workspace.id}`, status: 'complete', statusLabel: '확인', updatedAt: summary.latestWorksheet?.createdAt ?? '-' }] : [],
-    teamActivities: [],
     insight: { title: '학교 출제 경향', badgeLabel: 'API 데이터', headline: '학교 경향에서 다음 출제를 준비하세요', description: '학교 경향 상세는 API 연동 후 표시됩니다.', actionLabel: '학교 경향 보기', metrics: [] },
-    reviewPrompt: { title: '시험 후 리뷰', description: '시험지와 문제 세트의 결과를 비교할 수 있습니다.', actionLabel: '리뷰 보기 →' },
   }
 }
 

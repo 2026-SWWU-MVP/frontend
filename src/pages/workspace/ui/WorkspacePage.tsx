@@ -10,7 +10,6 @@ import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 import { ExamInsight } from "@/widgets/exam-insight/ui/ExamInsight";
 import { RecentQuestionSets } from "@/widgets/recent-question-sets/ui/RecentQuestionSets";
-import { TeamActivity } from "@/widgets/team-activity/ui/TeamActivity";
 import { WorkspaceOverview } from "@/widgets/workspace-overview/ui/WorkspaceOverview";
 
 import { AddWorkspaceModal } from "./AddWorkspaceModal";
@@ -214,14 +213,8 @@ export function WorkspacePage() {
       />
 
       <div className="workspace-page__content-grid">
-        <div>
-          <RecentQuestionSets items={workspace.recentQuestionSets} />
-          <ExamInsight insight={insight ?? workspace.insight} onAction={() => navigate("/school-trends")} />
-        </div>
-
-        <div>
-          <TeamActivity items={workspace.teamActivities} />
-        </div>
+        <RecentQuestionSets items={workspace.recentQuestionSets} />
+        <ExamInsight insight={insight ?? workspace.insight} onAction={() => navigate("/school-trends")} />
       </div>
       {addModal}
     </PageContainer>
