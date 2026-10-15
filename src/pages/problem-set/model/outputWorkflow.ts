@@ -1,25 +1,12 @@
-import {
-  createWorksheet,
-  downloadWorksheetPdf,
-  getAcceptedProblems,
-  getWorksheet,
-} from "@/entities/problem-set/api/repository";
+import { downloadWorksheetPdf } from "@/entities/problem-set/api/repository";
 
-export async function createProblemWorksheet(
-  workspaceId: number,
-  title: string,
-) {
-  const accepted = await getAcceptedProblems(workspaceId);
-  const worksheet = await createWorksheet(workspaceId, {
-    title,
-    problemIds: accepted.map((problem) => problem.id),
-    headerText: "수업용 문제지",
-    showLogo: true,
-  });
-  await getWorksheet(worksheet.id);
-  return worksheet;
-}
-
-export function downloadProblemWorksheet(worksheetId: number, answer: boolean) {
-  return downloadWorksheetPdf(worksheetId, answer);
+/** 문제지·정답지 PDF를 서버가 정한 파일 이름으로 내려받는다 */
+export async function downloadProblemWorksheet(worksheetId: number, answer: boolean) {
+  const { blob, filename } = await downloadWorksheetPdf(worksheetId, answer);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }

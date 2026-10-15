@@ -4,8 +4,6 @@ import {
   createGenerationJob,
   getGeneratedProblems,
   getGenerationJob,
-  getWorksheet,
-  createWorksheet,
   getMaterial,
   analyzePastExam,
   getPastExam,
@@ -43,7 +41,6 @@ import {
   resetProblemReview,
 } from "@/pages/problem-set/model/reviewWorkflow";
 import type { ReviewAction, ReviewEdit } from "@/pages/problem-set/ui/ReviewStage";
-import { downloadProblemWorksheet } from "@/pages/problem-set/model/outputWorkflow";
 import { SourceStage } from "@/pages/problem-set/ui/SourceStage";
 import { GenerationStage } from "@/pages/problem-set/ui/GenerationStage";
 import type { GenerationSelection } from "@/pages/problem-set/ui/GenerationStage";
@@ -415,7 +412,8 @@ void InfoCard;
 export function ProblemSetPage() {
   const navigate = useNavigate();
   const userId = getAuthSession()?.userId ?? null;
-  const academyState = useAcademyState(userId);
+  // 학원 정보가 바뀌면(로고 등) 다시 그린다
+  useAcademyState(userId);
   const academy = getStoredAcademy(userId ?? undefined);
   const [data, setData] = useState<ProblemSetResponse>(emptyProblemSet);
   const [setInfo, setSetInfo] = useState({
@@ -722,54 +720,20 @@ export function ProblemSetPage() {
     }
   };
 
-  const download = async (answer: boolean) => {
-    if (data.worksheetId === undefined) return;
-    try {
-      const blob = await downloadProblemWorksheet(data.worksheetId, answer);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = answer ? "answer-sheet.pdf" : "worksheet.pdf";
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "PDF 다운로드에 실패했습니다.",
-      );
-    }
-  };
 
   // 다음 문항으로 넘어가기만 한다 (채택은 채택 버튼으로만)
+  // 마지막 문항에서는 시험지 구성으로 넘어간다 (이번 생성 작업에서 채택한 문항만)
   const nextQuestion = async () => {
     if (currentQuestionIndex !== data.questions.length - 1) {
       setCurrentQuestionIndex((index) => index + 1);
       return;
     }
-    setError(null);
-    try {
-      const workspaceId = await resolveWorkspaceId();
-      // 시험지에는 이번 생성 작업에서 채택한 문항만 넣는다 (워크스페이스 전체 채택 문항 아님)
-      const accepted = data.questions.filter(
-        (question) => question.reviewStatus === "ACCEPTED",
-      );
-      if (accepted.length === 0)
-        throw new Error(
-          "채택된 문항이 없어 시험지를 만들 수 없습니다. 시험지에 넣을 문항을 채택해 주세요.",
-        );
-      const worksheet = await createWorksheet(workspaceId, {
-        title: data.title || "문제 세트",
-        problemIds: accepted.map((question) => Number(question.id)),
-        headerText: "수업용 문제지",
-        showLogo: true,
-      });
-      await getWorksheet(worksheet.id);
-      setData((current) => ({ ...current, worksheetId: worksheet.id }));
-      setStage("output");
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "시험지를 만들지 못했습니다.",
-      );
+    if (!data.questions.some((question) => question.reviewStatus === "ACCEPTED")) {
+      setError("채택된 문항이 없어 시험지를 만들 수 없습니다. 시험지에 넣을 문항을 채택해 주세요.");
+      return;
     }
+    setError(null);
+    setStage("output");
   };
   return (
     <PageContainer>
@@ -854,9 +818,6 @@ export function ProblemSetPage() {
           <OutputStage
             data={data}
             academy={academy}
-            academyLoading={academyState.status === "loading"}
-            worksheetId={data.worksheetId}
-            onDownload={download}
             restart={() => {
               setStage("source");
               setCurrentQuestionIndex(0);

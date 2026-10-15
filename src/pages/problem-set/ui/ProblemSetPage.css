@@ -1174,3 +1174,156 @@
 .generation-total b {
   color: var(--color-action-primary);
 }
+
+/* 시험지 구성·목록 (#32) */
+.worksheet-picker {
+  display: grid;
+  gap: 12px;
+}
+.worksheet-picker h2,
+.worksheet-settings h2,
+.worksheet-list h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.worksheet-picker ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.worksheet-picker li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  opacity: 0.6;
+}
+.worksheet-picker li.is-selected {
+  border-color: var(--color-action-primary);
+  opacity: 1;
+}
+.worksheet-picker label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  cursor: pointer;
+}
+.worksheet-picker label span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.worksheet-picker strong {
+  font-size: 13px;
+}
+.worksheet-picker small {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.worksheet-picker__move {
+  display: flex;
+  gap: 4px;
+}
+.worksheet-picker__move button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  background: var(--color-surface-default);
+  cursor: pointer;
+}
+.worksheet-picker__move button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.worksheet-settings {
+  display: grid;
+  gap: 6px;
+}
+.worksheet-settings label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.worksheet-settings input:not([type="checkbox"]) {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.worksheet-settings__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+  font-weight: 400 !important;
+  color: var(--color-text-secondary);
+}
+.worksheet-list {
+  display: grid;
+  gap: 10px;
+}
+.worksheet-list ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.worksheet-list li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+}
+.worksheet-list li.is-active {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+.worksheet-list__open {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.worksheet-list__open strong {
+  font-size: 13px;
+}
+.worksheet-list__open small {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.worksheet-list__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.worksheet-list__actions .button {
+  font-size: 12px;
+}
+.paper-section {
+  margin-top: 16px;
+}
+.paper-passage {
+  white-space: pre-line;
+}
+.paper-conditions,
+.paper-body {
+  white-space: pre-line;
+}
