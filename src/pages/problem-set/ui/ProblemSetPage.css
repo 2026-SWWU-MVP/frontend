@@ -839,3 +839,134 @@
     font-size: 11px;
   }
 }
+
+/* 문항 검수 (#26) */
+.review-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.review-chip--passed,
+.review-chip--accepted {
+  color: var(--color-status-success-foreground);
+  background: var(--color-status-success-background);
+}
+.review-chip--needs-review {
+  color: var(--color-status-review-foreground);
+  background: var(--color-status-review-background);
+}
+.review-chip--failed,
+.review-chip--rejected {
+  color: #b42318;
+  background: #fdecea;
+}
+.review-chip--draft {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-neutral);
+}
+.review-issues {
+  margin: 14px 0 0;
+  padding: 10px 12px 10px 28px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.review-issues--needs-review {
+  color: var(--color-status-review-foreground);
+  background: var(--color-status-review-background);
+}
+.review-issues--failed {
+  color: #b42318;
+  background: #fdecea;
+}
+.review-conditions ol {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.review-body {
+  margin: 14px 0;
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.review-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 6px;
+}
+.question-card .example-box {
+  margin-bottom: 14px;
+}
+.review-evidence {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--color-action-primary);
+  background: var(--color-surface-accent);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.review-evidence strong {
+  margin-right: 6px;
+  color: var(--color-action-primary);
+}
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.review-muted {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.review-reject,
+.review-edit {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+}
+.review-reject label,
+.review-edit label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.review-reject textarea,
+.review-edit textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.review-nav {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.review-nav.is-active {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+.review-nav strong {
+  font-size: 12px;
+}
+.review-nav__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

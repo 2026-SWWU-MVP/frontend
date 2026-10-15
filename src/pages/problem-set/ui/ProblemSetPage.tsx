@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createGenerationJob,
@@ -36,8 +36,12 @@ import {
 } from "@/pages/problem-set/model/sourceWorkflow";
 import {
   acceptProblem,
+  editProblem,
   regenerateReviewedProblem,
+  rejectProblem,
+  resetProblemReview,
 } from "@/pages/problem-set/model/reviewWorkflow";
+import type { ReviewAction, ReviewEdit } from "@/pages/problem-set/ui/ReviewStage";
 import { resolveConfirmedProfile } from "@/pages/problem-set/model/generationWorkflow";
 import { downloadProblemWorksheet } from "@/pages/problem-set/model/outputWorkflow";
 import { SourceStage } from "@/pages/problem-set/ui/SourceStage";
@@ -104,7 +108,7 @@ function problemResponseToQuestion(
     title: problem.stem ?? problem.body ?? "",
     prompt: problem.stem ?? problem.body ?? "",
     answerText: problem.answerText,
-    explanation: problem.explanation,
+    explanation: problem.explanation ?? undefined,
     reviewStatus: problem.reviewStatus,
     choices: (problem.choices ?? []).map((choice, choiceIndex) => ({
       id: `${problem.id}-${choiceIndex}`,
@@ -445,7 +449,7 @@ export function ProblemSetPage() {
   const { generating, setGenerating, progress, setProgress } =
     useGenerationState();
   const [error, setError] = useState<string | null>(null);
-  const acceptingQuestion = useRef(false);
+  const [reviewBusy, setReviewBusy] = useState<ReviewAction | null>(null);
 
   const updateSetInfo = (
     key: "school" | "grade" | "subject" | "exam",
@@ -468,55 +472,42 @@ export function ProblemSetPage() {
     });
   };
 
-  const acceptCurrentQuestion = async () => {
+  // 검수 동작(채택·폐기·되돌리기·수정·다시 생성)은 서버가 돌려준 문항으로 화면을 바꾼다
+  const reviewCurrentQuestion = async (
+    action: ReviewAction,
+    request: (problemId: number) => Promise<ProblemResponse>,
+    fallback: string,
+  ) => {
     const question = data.questions[currentQuestionIndex];
-    if (
-      !question ||
-      question.reviewStatus === "ACCEPTED" ||
-      acceptingQuestion.current
-    )
-      return;
-    acceptingQuestion.current = true;
+    if (!question || reviewBusy) return false;
+    setReviewBusy(action);
+    setError(null);
     try {
-      const updated = await acceptProblem(Number(question.id), {
-        reviewStatus: "ACCEPTED",
-      });
+      const updated = await request(Number(question.id));
       setData((current) => ({
         ...current,
         questions: current.questions.map((item) =>
-          item.id === question.id
-            ? { ...item, reviewStatus: updated.reviewStatus ?? "ACCEPTED" }
-            : item,
+          item.id === question.id ? toProblemQuestion(updated, item.number - 1) : item,
         ),
       }));
+      return true;
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "문항 채택에 실패했습니다.",
-      );
+      setError(cause instanceof Error ? cause.message : fallback);
+      return false;
     } finally {
-      acceptingQuestion.current = false;
+      setReviewBusy(null);
     }
   };
-
-  const regenerateCurrentQuestion = async () => {
-    const question = data.questions[currentQuestionIndex];
-    if (!question) return;
-    try {
-      const updated = await regenerateReviewedProblem(Number(question.id));
-      setData((current) => ({
-        ...current,
-        questions: current.questions.map((item) =>
-          item.id === question.id
-            ? problemResponseToQuestion(updated, currentQuestionIndex)
-            : item,
-        ),
-      }));
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "문항 재생성에 실패했습니다.",
-      );
-    }
-  };
+  const acceptCurrentQuestion = () =>
+    reviewCurrentQuestion("accept", (id) => acceptProblem(id), "문항 채택에 실패했습니다.");
+  const rejectCurrentQuestion = (reason: string) =>
+    reviewCurrentQuestion("reject", (id) => rejectProblem(id, reason.trim() || undefined), "문항 폐기에 실패했습니다.");
+  const resetCurrentQuestion = () =>
+    reviewCurrentQuestion("reset", (id) => resetProblemReview(id), "검수 상태를 되돌리지 못했습니다.");
+  const editCurrentQuestion = (fields: ReviewEdit) =>
+    reviewCurrentQuestion("edit", (id) => editProblem(id, fields), "문항을 수정하지 못했습니다.");
+  const regenerateCurrentQuestion = () =>
+    reviewCurrentQuestion("regenerate", (id) => regenerateReviewedProblem(id), "문항 재생성에 실패했습니다.");
 
   const uploadSingle = async (file: File) => {
     setError(null);
@@ -698,6 +689,9 @@ export function ProblemSetPage() {
         ...current,
         generationJobId: job.id,
         passage: passages[0]?.content ?? "",
+        passages: Object.fromEntries(
+          passages.map((passage) => [passage.id, { title: passage.title, content: passage.content }]),
+        ),
         questions: problems.map(toProblemQuestion),
       }));
       setCurrentQuestionIndex(0);
@@ -828,7 +822,12 @@ export function ProblemSetPage() {
             data={data}
             index={currentQuestionIndex}
             next={nextQuestion}
+            busy={reviewBusy}
+            onSelect={setCurrentQuestionIndex}
             onAccept={acceptCurrentQuestion}
+            onReject={rejectCurrentQuestion}
+            onReset={resetCurrentQuestion}
+            onEdit={editCurrentQuestion}
             onRegenerate={regenerateCurrentQuestion}
           />
         )}
