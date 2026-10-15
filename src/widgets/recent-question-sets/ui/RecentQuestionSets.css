@@ -23,7 +23,7 @@
 .recent-question-sets__columns,
 .recent-question-set {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px 86px;
+  grid-template-columns: minmax(0, 1fr) 72px 104px;
   column-gap: var(--spacing-16);
   align-items: center;
   padding-right: var(--spacing-24);
