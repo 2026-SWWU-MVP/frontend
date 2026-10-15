@@ -192,13 +192,32 @@ export interface ProblemResponse {
   typeLabel?: string
   passageTitle?: string
   stem?: string
+  conditions?: string[]
+  body?: string | null
+  choices?: string[]
+  answerText?: string
+  explanation?: string | null
+  /** 정답 근거가 된 윗글 문장 */
+  evidence?: string | null
+  reviewStatus?: 'DRAFT' | 'ACCEPTED' | 'REJECTED'
+  /** PASSED 통과 / NEEDS_REVIEW 블라인드 풀이 불일치(강사 확인 필요) / FAILED 규칙 검증 실패 */
+  validationStatus?: 'PASSED' | 'NEEDS_REVIEW' | 'FAILED'
+  validationIssues?: string[]
+  attempts?: number
+  edited?: boolean
+}
+
+/** 문항 수정·채택·폐기. 보낸 항목만 바뀐다 */
+export interface UpdateProblemRequest {
+  stem?: string
+  conditions?: string[]
   body?: string
   choices?: string[]
   answerText?: string
   explanation?: string
   reviewStatus?: 'DRAFT' | 'ACCEPTED' | 'REJECTED'
-  validationStatus?: 'PASSED' | 'NEEDS_REVIEW' | 'FAILED'
-  validationIssues?: string[]
+  /** 폐기 사유. 다음 생성 때 같은 실수를 피하는 데 쓰인다 */
+  rejectReason?: string
 }
 
 export interface WorksheetResponse {
@@ -361,7 +380,7 @@ export function getGeneratedProblems(jobId: number) {
   })
 }
 
-export function updateProblem(problemId: number, request: Partial<ProblemResponse> & { conditions?: string; rejectReason?: string }) {
+export function updateProblem(problemId: number, request: UpdateProblemRequest) {
   return httpClient.request<ProblemResponse>({ path: `/api/problems/${problemId}`, init: { method: 'PATCH' }, json: request })
 }
 
