@@ -13,6 +13,8 @@ interface WorkspaceOverviewProps {
   primaryActionLabel: string;
   preparation: PreparationBanner;
   stats: WorkspaceStat[];
+  onPrimaryAction?: () => void;
+  onPreparationAction?: () => void;
 }
 
 export function WorkspaceOverview({
@@ -21,6 +23,8 @@ export function WorkspaceOverview({
   primaryActionLabel,
   preparation,
   stats,
+  onPrimaryAction,
+  onPreparationAction,
 }: WorkspaceOverviewProps) {
   return (
     <>
@@ -29,7 +33,7 @@ export function WorkspaceOverview({
           <h1>{title}</h1>
           <p>{description}</p>
         </div>
-        <Button variant="primary">
+        <Button onClick={onPrimaryAction} variant="primary">
           <Icon name="plus" size={16} tone="default" />
           {primaryActionLabel}
         </Button>
@@ -47,7 +51,7 @@ export function WorkspaceOverview({
           <h2>{preparation.title}</h2>
           <p>{preparation.description}</p>
         </div>
-        <Button>{preparation.actionLabel}</Button>
+        <Button onClick={onPreparationAction}>{preparation.actionLabel}</Button>
       </section>
 
       <section aria-label="워크스페이스 요약" className="workspace-stats">
