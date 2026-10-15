@@ -21,10 +21,12 @@ export function AuthPage({ mode = "login" }: { mode?: "login" | "signup" }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isSignup = mode === "signup";
+  // 랜딩의 "데모로 둘러보기"(?demo=1)로 오면 데모 계정을 채워 둔다
+  const isDemo = mode !== "signup" && new URLSearchParams(location.search).has("demo");
   const [form, setForm] = useState({
     name: "",
-    loginId: "",
-    password: "",
+    loginId: isDemo ? "demo" : "",
+    password: isDemo ? "1234" : "",
     passwordConfirm: "",
   });
   const [error, setError] = useState("");
