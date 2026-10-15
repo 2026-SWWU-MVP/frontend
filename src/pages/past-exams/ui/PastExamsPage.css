@@ -1,0 +1,337 @@
+.past-exams-page {
+  display: grid;
+  gap: 20px;
+}
+
+.past-exams-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.past-exams-heading h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.4;
+  letter-spacing: -0.04em;
+}
+
+.past-exams-heading p {
+  margin: 4px 0 0;
+  max-width: 68ch;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.past-exams-heading__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.past-exams-alert {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #b42318;
+  background: #fdecea;
+  font-size: 13px;
+}
+
+.past-exams-alert--info {
+  color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+
+.past-exams-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.past-exams-list,
+.past-exams-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  background: var(--color-surface-default);
+}
+
+.past-exams-list h2,
+.past-exams-detail h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.past-exams-list ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.past-exams-list button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.past-exams-list button.is-active {
+  border-color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+}
+
+.past-exams-list strong {
+  font-size: 13px;
+}
+
+.past-exams-list small {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.past-status {
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-weight: 700;
+}
+
+.past-status--EXTRACTED {
+  color: var(--color-status-success-foreground);
+  background: var(--color-status-success-background);
+}
+
+.past-status--EXTRACTING,
+.past-status--UPLOADED {
+  color: var(--color-status-review-foreground);
+  background: var(--color-status-review-background);
+}
+
+.past-status--FAILED {
+  color: #b42318;
+  background: #fdecea;
+}
+
+.past-exams-detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.past-exams-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.extract-muted {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.extract-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.extract-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-neutral);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.extract-chip--issue {
+  color: var(--color-status-review-foreground);
+  background: var(--color-status-review-background);
+}
+
+.extract-filter {
+  display: flex;
+  gap: 4px;
+}
+
+.extract-filter button {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 999px;
+  background: var(--color-surface-default);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.extract-filter button.is-active {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+  background: var(--color-surface-accent);
+  font-weight: 700;
+}
+
+.extract-notes {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-status-review-background);
+  color: var(--color-status-review-foreground);
+  font-size: 12px;
+}
+
+.extract-notes p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.extract-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.extract-column {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.extract-column h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.extract-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+}
+
+.extract-card.has-issues {
+  border-color: #e0b04f;
+  background: #fffaf0;
+}
+
+.extract-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.extract-card__head strong {
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.extract-card__head .button {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.extract-issues {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-status-review-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.extract-stem {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.extract-text {
+  margin: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-line;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.extract-edit {
+  display: grid;
+  gap: 4px;
+}
+
+.extract-edit label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.extract-edit input,
+.extract-edit select,
+.extract-edit textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  background: var(--color-surface-default);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.extract-edit__row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.extract-edit__row span {
+  display: grid;
+  gap: 4px;
+}
+
+.extract-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 1120px) {
+  .past-exams-layout,
+  .extract-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

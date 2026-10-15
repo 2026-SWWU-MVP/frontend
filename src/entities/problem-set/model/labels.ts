@@ -66,3 +66,15 @@ export const ruleCategoryLabels: Record<RuleCategory, string> = {
   SCORING: "배점",
   OTHER: "기타",
 };
+
+export const pastExamStatusLabels: Record<string, string> = {
+  UPLOADED: "올림 (분석 전)",
+  EXTRACTING: "분석 중",
+  EXTRACTED: "추출 완료",
+  FAILED: "분석 실패",
+};
+
+export const examTypeLabels: Record<string, string> = {
+  MIDTERM: "중간고사",
+  FINAL: "기말고사",
+};
