@@ -90,7 +90,7 @@ export function SchoolTrendsPage() {
       <div className="school-trends-page">
         <div className="school-trends-heading">
           <div>
-            <h1>학교·시험 경향</h1>
+            <h1>학교별 시험 경향</h1>
             <p>모든 학원이 올린 기출에서 뽑은 통계입니다. 다른 학원 기출의 원문은 보이지 않습니다.</p>
           </div>
           {data && data.options.length > 1 && (
