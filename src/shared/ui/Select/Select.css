@@ -1,0 +1,65 @@
+.select-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.select-control:hover:not(:disabled) { border-color: var(--color-data-secondary); }
+.select-control:focus-visible,
+.select-control[aria-expanded="true"] {
+  outline: 0;
+  border-color: var(--color-action-primary);
+  box-shadow: 0 0 0 3px var(--color-surface-accent);
+}
+.select-control:disabled { opacity: .5; cursor: not-allowed; }
+.select-control--full { width: 100%; }
+.select-control--compact { height: 34px; padding: 0 10px; font-size: 12px; }
+.select-control__value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-control > .icon { flex-shrink: 0; }
+.select-control[aria-expanded="true"] > .icon { transform: rotate(180deg); }
+.select-menu {
+  position: fixed;
+  z-index: 1100;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  background: var(--color-surface-default);
+  box-shadow: 0 8px 28px #2527351a, 0 2px 6px #2527350a;
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: 13px;
+}
+.select-menu__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.select-menu__option > .icon { flex-shrink: 0; }
+.select-menu__option:hover:not([aria-disabled="true"]),
+.select-menu__option.is-active { background: var(--color-surface-neutral); }
+.select-menu__option[aria-selected="true"] { color: var(--color-action-primary); font-weight: 700; }
+.select-menu__option[aria-selected="true"].is-active { background: var(--color-surface-accent); }
+.select-menu__option[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .select-control { transition: none; } }

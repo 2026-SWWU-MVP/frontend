@@ -18,6 +18,7 @@ import { getAuthSession } from "@/shared/auth/session";
 import { formatDateTime } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/Badge/Badge";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 
@@ -239,16 +240,13 @@ export function MembersPage() {
                 />
               </label>
 
-              <select
+              <Select
                 aria-label="권한 필터"
                 id="members-role"
-                onChange={(event) => setRole(event.target.value as typeof role)}
+                onValueChange={(value) => setRole(value as typeof role)}
                 value={role}
-              >
-                <option>전체 권한</option>
-                <option>원장</option>
-                <option>강사</option>
-              </select>
+                options={["전체 권한", "원장", "강사"].map((label) => ({ value: label, label }))}
+              />
             </div>
           </div>
 

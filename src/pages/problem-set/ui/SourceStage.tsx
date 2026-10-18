@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MaterialResponse, PastExamResponse } from "@/entities/problem-set/api/repository";
 import type { ProblemSetResponse } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { examTypeLabels, pastExamStatusLabels } from "@/entities/problem-set/model/labels";
 import { Link } from "react-router-dom";
@@ -51,14 +52,13 @@ function Field({
   return (
     <label className="set-field">
       <strong>{label}</strong>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">선택해 주세요</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {labels?.[option] ?? option}
-          </option>
-        ))}
-      </select>
+      <Select
+        aria-label={label}
+        fullWidth
+        value={value}
+        onValueChange={onChange}
+        options={[{ value: "", label: "선택해 주세요" }, ...options.map((option) => ({ value: option, label: labels?.[option] ?? option }))]}
+      />
     </label>
   );
 }
@@ -67,9 +67,11 @@ function Field({
 function Metadata({
   info,
   onChange,
+  sourceMode,
 }: {
   info: SetInfo;
   onChange: (key: keyof SetInfo, value: string) => void;
+  sourceMode: "material" | "past-exam";
 }) {
   const [workspaceTitle, setWorkspaceTitle] = useState<string | null>(null);
   useEffect(() => {
@@ -91,7 +93,7 @@ function Metadata({
 
   return (
     <section className="set-card info-card">
-      <h2>문제 세트 정보</h2>
+      <h2>{sourceMode === "past-exam" ? "기출 정보" : "문제 세트 정보"}</h2>
       <div className="set-field">
         <strong>워크스페이스</strong>
         <p className="info-card__value">
@@ -99,14 +101,14 @@ function Metadata({
           <Link to="/workspace">바꾸기</Link>
         </p>
       </div>
-      <Field
+      {sourceMode === "material" && <Field
         label="시험"
         value={info.exam}
         options={["중간고사", "기말고사"]}
         onChange={(value) => onChange("exam", value)}
-      />
+      />}
       <small className="field-help">
-        {info.school && info.exam ? `문제 세트 이름: ${info.school} ${info.exam} 대비` : "시험을 고르면 문제 세트 이름이 만들어집니다."}
+        {sourceMode === "past-exam" ? "연도·학기·시험 유형을 확인한 뒤 기출을 올려 주세요." : info.school && info.exam ? `문제 세트 이름: ${info.school} ${info.exam} 대비` : "시험을 고르면 문제 세트 이름이 만들어집니다."}
       </small>
     </section>
   );
@@ -322,12 +324,16 @@ export function SourceStage({
           </div>
         </section>
 
-        <Metadata info={setInfo} onChange={onSetInfoChange} />
+        <Metadata info={setInfo} onChange={onSetInfoChange} sourceMode={sourceMode} />
       </div>
 
       <div className="set-actions">
-        <Button variant="primary" onClick={next}>
-          문제 생성 설정으로 이동
+        <Button
+          variant="primary"
+          onClick={next}
+          disabled={sourceMode === "past-exam" && (pastExam?.status !== "EXTRACTED" || uploading || analyzingPastExam)}
+        >
+          {sourceMode === "past-exam" ? "출제 프로필로 이동" : "문제 생성 설정으로 이동"}
         </Button>
       </div>
     </>

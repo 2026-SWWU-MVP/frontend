@@ -107,7 +107,7 @@ export function WorkspacePage() {
           setEmpty(true);
           return;
         }
-        setError("워크스페이스 정보를 불러오지 못했습니다.");
+        setError(cause instanceof Error ? cause.message : "워크스페이스 정보를 불러오지 못했습니다.");
       });
 
     return () => {
@@ -142,7 +142,17 @@ export function WorkspacePage() {
           })),
         });
       })
-      .catch(() => undefined);
+      .catch((cause: unknown) => {
+        if (!active) return;
+        setInsight({
+          title: "학교 출제 경향",
+          badgeLabel: "불러오기 실패",
+          headline: "학교 출제 경향을 불러오지 못했습니다",
+          description: cause instanceof Error ? cause.message : "잠시 후 다시 시도해 주세요.",
+          actionLabel: "학교 경향 다시 확인",
+          metrics: [],
+        });
+      });
     return () => {
       active = false;
     };
@@ -162,6 +172,7 @@ export function WorkspacePage() {
     return (
       <PageContainer>
         <p className="workspace-page__message">{error}</p>
+        <Button onClick={reload} variant="secondary">다시 시도</Button>
       </PageContainer>
     );
   }
@@ -204,7 +215,7 @@ export function WorkspacePage() {
 
       <WorkspaceOverview
         description={workspace.description}
-        onPreparationAction={() => navigate("/problem-sets")}
+        onPreparationAction={() => navigate(workspace.preparation.actionPath)}
         onPrimaryAction={() => navigate("/problem-sets")}
         preparation={workspace.preparation}
         primaryActionLabel={workspace.primaryActionLabel}

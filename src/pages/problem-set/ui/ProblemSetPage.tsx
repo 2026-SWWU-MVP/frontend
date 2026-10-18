@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createGenerationJob,
   getGeneratedProblems,
@@ -120,6 +120,16 @@ function Header({
 }
 export function ProblemSetPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sourceMode = searchParams.get("source") === "past-exam" ? "past-exam" : "material";
+  function setSourceMode(mode: "material" | "past-exam") {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (mode === "past-exam") next.set("source", mode);
+      else next.delete("source");
+      return next;
+    }, { replace: true });
+  }
   const userId = getAuthSession()?.userId ?? null;
   // 학원 정보가 바뀌면(로고 등) 다시 그린다
   useAcademyState(userId);
@@ -136,8 +146,6 @@ export function ProblemSetPage() {
   const {
     uploading,
     setUploading,
-    sourceMode,
-    setSourceMode,
     examYear,
     setExamYear,
     semester,

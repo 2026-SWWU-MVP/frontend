@@ -17,6 +17,7 @@ import type { WorkspaceOption } from "@/entities/workspace/model/types";
 import { setWorkspaceId } from "@/shared/auth/workspace";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import { Select } from "@/shared/ui/Select/Select";
 import "./SchoolTrendsPage.css";
 
 const confidenceLabels: Record<SchoolTrendResponse["confidence"], string> = {
@@ -96,18 +97,13 @@ export function SchoolTrendsPage() {
           {data && data.options.length > 1 && (
             <label className="trend-workspace">
               <span>워크스페이스</span>
-              <select
-                className="trend-select"
+              <Select
+                aria-label="워크스페이스"
                 id="trend-workspace"
-                onChange={(event) => selectWorkspace(Number(event.target.value))}
+                onValueChange={(value) => selectWorkspace(Number(value))}
                 value={data.workspaceId}
-              >
-                {data.options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
+                options={data.options.map((option) => ({ value: option.id, label: option.title }))}
+              />
             </label>
           )}
         </div>

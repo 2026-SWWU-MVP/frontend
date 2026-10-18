@@ -14,6 +14,7 @@ import { resolveWorkspaceId } from "@/entities/workspace/api/repository";
 import { resolveConfirmedProfile } from "@/pages/problem-set/model/generationWorkflow";
 import { waitForMaterialSplit } from "@/pages/problem-set/model/workflow";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 
 type GeneratableType = (typeof generatableTypes)[number];
 type PerPassage = NonNullable<GenerationRequest["perPassage"]>;
@@ -375,14 +376,14 @@ export function GenerationStage({
                         {type === "GRAMMAR_FIX" && (
                           <label>
                             틀린 곳 수
-                            <select
+                            <Select
+                              aria-label="틀린 곳 수"
+                              size="compact"
                               id={`type-${type}-errors`}
-                              onChange={(event) => updateSetting(type, { errorCount: Number(event.target.value) })}
+                              onValueChange={(value) => updateSetting(type, { errorCount: Number(value) })}
                               value={setting.errorCount}
-                            >
-                              <option value={1}>1개</option>
-                              <option value={2}>2개</option>
-                            </select>
+                              options={[{ value: 1, label: "1개" }, { value: 2, label: "2개" }]}
+                            />
                           </label>
                         )}
                       </div>

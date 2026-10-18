@@ -82,6 +82,13 @@ function workspaceTitle(workspace: WorkspaceApiResponse) {
 function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[]): WorkspaceResponse {
   const summary = workspace.summary ?? {}
   const latestTitle = summary.latestWorksheet?.title
+  const preparation = summary.profileStatus === 'CONFIRMED'
+    ? { title: '확정된 프로필로 문제를 만들 준비가 됐어요', actionLabel: '문제 세트 만들기', actionPath: '/problem-sets' }
+    : summary.profileStatus === 'DRAFT'
+      ? { title: '출제 프로필을 검토하고 확정해 주세요', actionLabel: '프로필 검토하기', actionPath: '/profile' }
+      : (summary.pastExamCount ?? 0) > 0
+        ? { title: '올린 기출로 출제 프로필을 만들어 주세요', actionLabel: '프로필 만들기', actionPath: '/profile' }
+        : { title: '먼저 이 학교의 기출을 올려 주세요', actionLabel: '기출 올리기', actionPath: '/problem-sets?source=past-exam' }
   return {
     id: workspace.id,
     options,
@@ -90,10 +97,9 @@ function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[
     primaryActionLabel: '새 문제 세트 만들기',
     preparation: {
       eyebrow: '내신 준비 워크플로',
-      steps: '자료 입력 → AI 생성 → 검토 → 확정',
-      title: '확정된 프로필과 자료로 문제를 준비하세요',
+      steps: '기출 등록 → 프로필 확정 → 문제 생성',
+      ...preparation,
       description: `출제 프로필 ${formatProfileStatus(summary.profileStatus)} · 확정 버전 ${summary.confirmedProfileVersion ?? '-'}`,
-      actionLabel: '문제 세트 만들기',
     },
     stats: [
       { label: '기출 자료', value: `${summary.pastExamCount ?? 0}건`, detail: '올린 기출 회차' },
@@ -101,7 +107,7 @@ function mapWorkspace(workspace: WorkspaceApiResponse, options: WorkspaceOption[
       { label: '최근 시험지', value: latestTitle ?? '없음', detail: latestTitle ? formatShortDateTime(summary.latestWorksheet?.createdAt) : '아직 만든 시험지가 없습니다' },
     ],
     recentQuestionSets: latestTitle ? [{ title: latestTitle, detail: '최근에 만든 시험지', status: 'complete', statusLabel: '완성', updatedAt: formatShortDateTime(summary.latestWorksheet?.createdAt) }] : [],
-    insight: { title: '학교 출제 경향', badgeLabel: 'API 데이터', headline: '학교 경향에서 다음 출제를 준비하세요', description: '학교 경향 상세는 API 연동 후 표시됩니다.', actionLabel: '학교 경향 보기', metrics: [] },
+    insight: { title: '학교 출제 경향', badgeLabel: '불러오는 중', headline: '이 학교의 출제 경향을 불러오고 있습니다', description: '학교별 기출 통계를 확인하고 있습니다.', actionLabel: '학교 경향 보기', metrics: [] },
   }
 }
 

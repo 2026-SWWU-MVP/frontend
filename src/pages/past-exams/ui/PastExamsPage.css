@@ -299,7 +299,6 @@
 }
 
 .extract-edit input,
-.extract-edit select,
 .extract-edit textarea {
   width: 100%;
   padding: 6px 8px;
