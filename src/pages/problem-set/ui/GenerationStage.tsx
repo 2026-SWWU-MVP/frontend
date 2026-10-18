@@ -134,7 +134,9 @@ export function GenerationStage({
   generating: boolean;
   progress: number;
 }) {
-  const materialId = data.materialId;
+  const materialIds = data.materialIds;
+  const materialKey = materialIds.join(",");
+  const materialNames = new Map(data.files.map((file) => [Number(file.id), file.name]));
   const [passages, setPassages] = useState<PassageResponse[] | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -144,21 +146,33 @@ export function GenerationStage({
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // 자료의 지문(분리가 끝날 때까지 기다림)과 확정 프로필(유형 구성 기본값)을 불러온다
+  // 고른 자료들의 지문(분리가 끝날 때까지 기다림)과 확정 프로필(유형 구성 기본값)을 불러온다
+  // 일부 자료가 실패해도 나머지 자료의 지문은 쓸 수 있게 한다
   useEffect(() => {
-    if (materialId === undefined) return;
+    const ids = materialKey ? materialKey.split(",").map(Number) : [];
+    if (ids.length === 0) return;
     let active = true;
-    (async () => {
-      const material = await waitForMaterialSplit(materialId);
-      if (material.status === "FAILED") {
-        throw new Error(material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.");
-      }
-      const items = await getMaterialPassages(materialId);
+    Promise.allSettled(
+      ids.map(async (id) => {
+        const material = await waitForMaterialSplit(id);
+        if (material.status === "FAILED") {
+          throw new Error(material.failureReason ?? "자료에서 지문을 분리하지 못했습니다.");
+        }
+        return getMaterialPassages(id);
+      }),
+    ).then((results) => {
       if (!active) return;
+      const items = results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+      const failures = results.flatMap((result, index) =>
+        result.status === "rejected"
+          ? [`${materialNames.get(ids[index]) ?? `자료 ${ids[index]}`}: ${
+              result.reason instanceof Error ? result.reason.message : "지문을 불러오지 못했습니다."
+            }`]
+          : [],
+      );
       setPassages(items);
       setSelected(new Set(items.slice(0, MAX_PASSAGES).map((item) => item.id)));
-    })().catch((cause: unknown) => {
-      if (active) setLoadError(cause instanceof Error ? cause.message : "지문을 불러오지 못했습니다.");
+      setLoadError(failures.length ? failures.join(" / ") : null);
     });
     resolveWorkspaceId()
       .then((workspaceId) => resolveConfirmedProfile(workspaceId))
@@ -173,7 +187,9 @@ export function GenerationStage({
     return () => {
       active = false;
     };
-  }, [materialId]);
+    // 자료 이름은 오류 문구에만 쓰므로 고른 자료가 바뀔 때만 다시 불러온다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [materialKey]);
 
   function toggle(passageId: number) {
     setSelected((current) => {
@@ -189,6 +205,8 @@ export function GenerationStage({
   }
 
   async function savePassage(target: PassageResponse | undefined, title: string, content: string) {
+    // 직접 추가한 지문은 첫 번째로 고른 자료에 넣는다
+    const materialId = materialIds[0];
     if (materialId === undefined) return;
     setActionError(null);
     try {
@@ -262,6 +280,7 @@ export function GenerationStage({
                       />
                       <strong>{passage.title || `지문 ${passage.orderNo}`}</strong>
                       <small>
+                        {materialIds.length > 1 && `${materialNames.get(passage.materialId) ?? `자료 ${passage.materialId}`} · `}
                         {passage.wordCount ?? 0}단어
                         {(passage.wordCount ?? 0) < SHORT_PASSAGE_WORDS && " · 짧아서 문항이 단조로울 수 있음"}
                         {passage.edited && " · 수정함"}

@@ -59,13 +59,13 @@ export function TextMaterialForm({
   );
 }
 
-/** 이 워크스페이스에 이전에 올린 시험범위 자료에서 고른다 */
+/** 이 워크스페이스에 이전에 올린 시험범위 자료에서 고른다 (여러 개 선택·해제) */
 export function ExistingMaterials({
-  selectedId,
-  onPick,
+  selectedIds,
+  onToggle,
 }: {
-  selectedId?: number;
-  onPick: (material: MaterialResponse) => void;
+  selectedIds: number[];
+  onToggle: (material: MaterialResponse) => void;
 }) {
   const [materials, setMaterials] = useState<MaterialResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,23 +91,26 @@ export function ExistingMaterials({
 
   return (
     <ul className="material-list">
-      {materials.map((material) => (
-        <li key={material.id}>
-          <button
-            aria-pressed={material.id === selectedId}
-            className={material.id === selectedId ? "is-active" : undefined}
-            disabled={material.status === "FAILED"}
-            onClick={() => onPick(material)}
-            type="button"
-          >
-            <strong>{material.title || material.originalFilename || `자료 ${material.id}`}</strong>
-            <small>
-              {material.sourceType === "TEXT" ? "텍스트" : "PDF"} · 지문 {material.passageCount ?? 0}개 · {statusLabels[material.status]}
-              {material.createdByName ? ` · ${material.createdByName}` : ""} · {formatDateTime(material.createdAt)}
-            </small>
-          </button>
-        </li>
-      ))}
+      {materials.map((material) => {
+        const selected = selectedIds.includes(material.id);
+        return (
+          <li key={material.id}>
+            <button
+              aria-pressed={selected}
+              className={selected ? "is-active" : undefined}
+              disabled={material.status === "FAILED" && !selected}
+              onClick={() => onToggle(material)}
+              type="button"
+            >
+              <strong>{material.title || material.originalFilename || `자료 ${material.id}`}</strong>
+              <small>
+                {material.sourceType === "TEXT" ? "텍스트" : "PDF"} · 지문 {material.passageCount ?? 0}개 · {statusLabels[material.status]}
+                {material.createdByName ? ` · ${material.createdByName}` : ""} · {formatDateTime(material.createdAt)}
+              </small>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

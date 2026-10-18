@@ -8,6 +8,8 @@ import { examTypeLabels, pastExamStatusLabels } from "@/entities/problem-set/mod
 import { Link } from "react-router-dom";
 import { workspaceRepository } from "@/entities/workspace/api/repository";
 
+import type { PendingUpload, SourceFile, SourceMode } from "@/pages/problem-set/model/useSourceState";
+
 import { ExistingMaterials, TextMaterialForm } from "./MaterialPicker";
 
 type SetInfo = { school: string; grade: string; subject: string; exam: string };
@@ -16,8 +18,8 @@ type Props = {
   next: () => void;
   onUpload: (files: File[]) => void;
   uploading: boolean;
-  sourceMode: "material" | "past-exam";
-  onSourceModeChange: (mode: "material" | "past-exam") => void;
+  sourceMode: SourceMode;
+  onSourceModeChange: (mode: SourceMode) => void;
   examYear: number;
   semester: number;
   examType: "MIDTERM" | "FINAL";
@@ -27,13 +29,13 @@ type Props = {
   onAnalyzePastExam: () => void;
   pastExam: PastExamResponse | null;
   analyzingPastExam: boolean;
-  selectedFileName: string | null;
-  uploadFailed: boolean;
+  pastExamFile: SourceFile | null;
+  pendingUpload: PendingUpload | null;
   setInfo: SetInfo;
   onSetInfoChange: (key: keyof SetInfo, value: string) => void;
-  onRemoveFile: (id: string) => void;
+  onRemoveFile: (mode: SourceMode, id: string) => void;
   onTextSubmit: (title: string, text: string) => void;
-  onPickMaterial: (material: MaterialResponse) => void;
+  onToggleMaterial: (material: MaterialResponse) => void;
 };
 
 function Field({
@@ -71,7 +73,7 @@ function Metadata({
 }: {
   info: SetInfo;
   onChange: (key: keyof SetInfo, value: string) => void;
-  sourceMode: "material" | "past-exam";
+  sourceMode: SourceMode;
 }) {
   const [workspaceTitle, setWorkspaceTitle] = useState<string | null>(null);
   useEffect(() => {
@@ -161,16 +163,18 @@ export function SourceStage({
   onAnalyzePastExam,
   pastExam,
   analyzingPastExam,
-  selectedFileName,
-  uploadFailed,
+  pastExamFile,
+  pendingUpload,
   setInfo,
   onSetInfoChange,
   onRemoveFile,
   onTextSubmit,
-  onPickMaterial,
+  onToggleMaterial,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [materialInput, setMaterialInput] = useState<"pdf" | "text" | "existing">("pdf");
+  // 자료 탭은 고른 시험범위 자료, 기출 탭은 올린 기출만 보여준다
+  const files = sourceMode === "past-exam" ? (pastExamFile ? [pastExamFile] : []) : data.files;
 
   return (
     <>
@@ -179,7 +183,7 @@ export function SourceStage({
           <div className="set-card-heading">
             <h2>자료 입력</h2>
             <span className="accent-badge">
-              {data.files.length}개 자료 선택
+              {files.length}개 자료 선택
             </span>
           </div>
 
@@ -255,7 +259,7 @@ export function SourceStage({
             <TextMaterialForm busy={uploading} onSubmit={onTextSubmit} />
           )}
           {sourceMode === "material" && materialInput === "existing" && (
-            <ExistingMaterials onPick={onPickMaterial} selectedId={data.materialId} />
+            <ExistingMaterials onToggle={onToggleMaterial} selectedIds={data.materialIds} />
           )}
 
           <div className={`upload-box ${sourceMode}`} hidden={sourceMode === "material" && materialInput !== "pdf"}>
@@ -307,17 +311,18 @@ export function SourceStage({
             </div>
           )}
 
-          {data.files.length ? (
-            <Files files={data.files} onRemove={onRemoveFile} />
-          ) : selectedFileName ? (
+          {files.length > 0 && (
+            <Files files={files} onRemove={(id) => onRemoveFile(sourceMode, id)} />
+          )}
+          {pendingUpload && (
             <div className="file-list">
               <div className="set-file">
                 <Icon name="files" size={18} tone="accent" />
-                <strong>{selectedFileName}</strong>
-                <small>{uploadFailed ? "업로드 실패" : "업로드 중..."}</small>
+                <strong>{pendingUpload.name}</strong>
+                <small>{pendingUpload.failed ? "업로드 실패" : "업로드 중..."}</small>
               </div>
             </div>
-          ) : null}
+          )}
 
           <div className="privacy-note">
             업로드 권한이 있는 자료만 업로드해 주세요.
