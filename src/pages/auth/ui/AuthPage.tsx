@@ -11,7 +11,7 @@ import "./AuthPage.css";
 function Logo() {
   return (
     <Link className="auth-logo" to="/">
-      <span>▥</span>
+      <img className="public-logo__mark" src="/logo.png" alt="" />
       <strong>내신뿌뿌</strong>
     </Link>
   );
