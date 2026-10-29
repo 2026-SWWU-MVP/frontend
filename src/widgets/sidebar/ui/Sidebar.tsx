@@ -30,7 +30,13 @@ const secondaryNavigation: NavigationItem[] = [
   { icon: "settings", label: "워크스페이스 설정", path: "/settings" },
 ];
 
-function NavigationItemView({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
+function NavigationItemView({
+  item,
+  onNavigate,
+}: {
+  item: NavigationItem;
+  onNavigate?: () => void;
+}) {
   return (
     <NavLink
       onClick={onNavigate}
@@ -79,9 +85,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <aside className="sidebar">
       <div className="sidebar__content">
         <a className="sidebar__brand" href="#">
-          <span className="sidebar__brand-icon">
-            <Icon name="book-open" size={20} tone="accent" />
-          </span>
+          <img className="public-logo__mark" src="/logo.png" alt="" />
           <strong>내신뿌뿌</strong>
         </a>
 
@@ -102,7 +106,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
         <nav aria-label="주요 메뉴" className="sidebar__navigation">
           {primaryNavigation.map((item) => (
-            <NavigationItemView item={item} key={item.label} onNavigate={onNavigate} />
+            <NavigationItemView
+              item={item}
+              key={item.label}
+              onNavigate={onNavigate}
+            />
           ))}
         </nav>
 
@@ -115,7 +123,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               className="sidebar__secondary-navigation"
             >
               {secondaryNavigation.map((item) => (
-                <NavigationItemView item={item} key={item.label} onNavigate={onNavigate} />
+                <NavigationItemView
+                  item={item}
+                  key={item.label}
+                  onNavigate={onNavigate}
+                />
               ))}
             </nav>
           </>
