@@ -39,7 +39,6 @@
   font-size: var(--font-size-13);
 }
 
-.profile-page select,
 .profile-page textarea,
 .profile-page input[type="number"] {
   border: var(--stroke-width-1) solid var(--color-border-default);
@@ -50,11 +49,6 @@
   font-size: var(--font-size-13);
 }
 
-.profile-page select {
-  height: 42px;
-  padding: 0 var(--spacing-10);
-  max-width: 100%;
-}
 
 .profile-page textarea {
   width: 100%;
@@ -336,9 +330,6 @@
   gap: var(--spacing-6);
 }
 
-.profile-rule-edit__meta select {
-  height: 32px;
-}
 
 .profile-check {
   display: inline-flex;

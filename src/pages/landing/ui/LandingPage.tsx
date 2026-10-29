@@ -7,7 +7,7 @@ const DEMO_LOGIN = "/login?demo=1";
 function Logo() {
   return (
     <Link className="public-logo" to="/">
-      <span className="public-logo__mark">▥</span>
+      <img className="public-logo__mark" src="/logo.png" alt="" />
       <strong>내신뿌뿌</strong>
     </Link>
   );
@@ -23,7 +23,9 @@ function ProductPreview() {
           <strong>압구정고 1학년</strong>
           <span className="preview-badge preview-badge--ok">v2 확정</span>
         </header>
-        <p className="preview-meta">기출 3회분 · 서술형 비율 36% · 학교 DB 1회분 반영</p>
+        <p className="preview-meta">
+          기출 3회분 · 서술형 비율 36% · 학교 DB 1회분 반영
+        </p>
         <ul className="preview-rules">
           <li>
             <span className="preview-tag">기출</span>
@@ -61,20 +63,33 @@ function ProductPreview() {
           <strong>어구 배열</strong>
           <span className="preview-badge preview-badge--ok">검증 통과</span>
         </header>
-        <p className="preview-stem">윗글에 나온 문장이 되도록 [보기]의 어구를 배열하시오.</p>
+        <p className="preview-stem">
+          윗글에 나온 문장이 되도록 [보기]의 어구를 배열하시오.
+        </p>
         <div className="preview-box">
-          <strong>[조건]</strong> [보기]의 모든 어구를 한 번씩 사용할 것. 단어를 추가하거나 형태를 바꾸지 말 것.
+          <strong>[조건]</strong> [보기]의 모든 어구를 한 번씩 사용할 것. 단어를
+          추가하거나 형태를 바꾸지 말 것.
         </div>
         <div className="preview-chunks">
-          {["the government", "a new plan", "However", "was unable", "having", "to do so", "a limited budget", "and had to come up with"].map(
-            (chunk, index) => (
-              <span key={chunk}>
-                {String.fromCharCode(9312 + index)} {chunk}
-              </span>
-            ),
-          )}
+          {[
+            "the government",
+            "a new plan",
+            "However",
+            "was unable",
+            "having",
+            "to do so",
+            "a limited budget",
+            "and had to come up with",
+          ].map((chunk, index) => (
+            <span key={chunk}>
+              {String.fromCharCode(9312 + index)} {chunk}
+            </span>
+          ))}
         </div>
-        <p className="preview-meta">정답 근거: However, having a limited budget, the government was unable to do so…</p>
+        <p className="preview-meta">
+          정답 근거: However, having a limited budget, the government was unable
+          to do so…
+        </p>
         <div className="preview-actions">
           <span className="preview-button preview-button--primary">채택</span>
           <span className="preview-button">폐기</span>
@@ -155,19 +170,27 @@ export function LandingPage() {
             내신 서술형을 <em>뿌셔뿌셔</em>
           </h1>
           <p>
-            기출을 올리면 AI가 그 학교의 출제 패턴을 정리하고, 선생님이 확정한 기준으로 시험범위 지문에서 서술형 문항을
-            만듭니다. 검수부터 학원 로고가 들어간 시험지 PDF까지 한곳에서.
+            기출을 올리면 AI가 그 학교의 출제 패턴을 정리하고, 선생님이 확정한
+            기준으로 시험범위 지문에서 서술형 문항을 만듭니다. 검수부터 학원
+            로고가 들어간 시험지 PDF까지 한곳에서.
           </p>
           <div className="landing-hero__actions">
-            <Link className="public-button public-button--large" to={DEMO_LOGIN}>
+            <Link
+              className="public-button public-button--large"
+              to={DEMO_LOGIN}
+            >
               데모로 둘러보기
             </Link>
-            <Link className="public-button public-button--ghost public-button--large" to="/signup">
+            <Link
+              className="public-button public-button--ghost public-button--large"
+              to="/signup"
+            >
               무료로 시작하기
             </Link>
           </div>
           <p className="demo-account">
-            데모 계정 <code>demo</code> / <code>1234</code> · 눈송어학원 원장으로 로그인됩니다
+            데모 계정 <code>demo</code> / <code>1234</code> · 눈송어학원
+            원장으로 로그인됩니다
           </p>
           <ProductPreview />
         </section>
@@ -176,7 +199,10 @@ export function LandingPage() {
           <div className="landing-section__head">
             <span className="eyebrow">준비 흐름</span>
             <h2>기출에서 시험지까지 4단계</h2>
-            <p>학교마다 다른 출제 방식을 먼저 정리하고, 그 기준으로 문제를 만듭니다.</p>
+            <p>
+              학교마다 다른 출제 방식을 먼저 정리하고, 그 기준으로 문제를
+              만듭니다.
+            </p>
           </div>
           <ol className="landing-steps">
             {steps.map((step, index) => (
@@ -189,29 +215,48 @@ export function LandingPage() {
           </ol>
         </section>
 
-        <section className="landing-section landing-section--tint" id="features">
+        <section
+          className="landing-section landing-section--tint"
+          id="features"
+        >
           <div className="landing-section__head">
             <span className="eyebrow">주요 기능</span>
             <h2>그대로 시험지에 넣을 수 있게</h2>
-            <p>AI가 만든 문항을 선생님이 믿고 쓸 수 있도록 검증하고, 쓸수록 학원에 맞춰집니다.</p>
+            <p>
+              AI가 만든 문항을 선생님이 믿고 쓸 수 있도록 검증하고, 쓸수록
+              학원에 맞춰집니다.
+            </p>
           </div>
           <div className="landing-features">
             <article>
               <h3>두 번 검증하는 문항</h3>
               <p>
-                규칙 검증으로 조건·형식을 확인하고, 정답을 모르는 AI가 다시 풀어 정답이 하나인지 봅니다. 통과하지 못하면 최대 3번 다시
-                만들고, 애매하면 "확인 필요"로 알려 줍니다.
+                규칙 검증으로 조건·형식을 확인하고, 정답을 모르는 AI가 다시 풀어
+                정답이 하나인지 봅니다. 통과하지 못하면 최대 3번 다시 만들고,
+                애매하면 "확인 필요"로 알려 줍니다.
               </p>
               <div className="feature-badges">
-                <span className="preview-badge preview-badge--ok">검증 통과</span>
-                <span className="preview-badge preview-badge--warn">확인 필요</span>
-                <span className="preview-badge preview-badge--bad">검증 실패</span>
+                <span className="preview-badge preview-badge--ok">
+                  검증 통과
+                </span>
+                <span className="preview-badge preview-badge--warn">
+                  확인 필요
+                </span>
+                <span className="preview-badge preview-badge--bad">
+                  검증 실패
+                </span>
               </div>
             </article>
             <article>
               <h3>쓸수록 맞춤</h3>
-              <p>폐기 사유와 선생님이 고친 내용이 다음 생성에 반영됩니다. 데이터 리포트에서 생성할 때마다 채택률이 어떻게 바뀌는지 봅니다.</p>
-              <div className="feature-bars" aria-label="생성 작업별 채택률 예시">
+              <p>
+                폐기 사유와 선생님이 고친 내용이 다음 생성에 반영됩니다. 데이터
+                리포트에서 생성할 때마다 채택률이 어떻게 바뀌는지 봅니다.
+              </p>
+              <div
+                className="feature-bars"
+                aria-label="생성 작업별 채택률 예시"
+              >
                 <span>
                   <i style={{ height: 36 }} />
                   <small>1회차 50%</small>
@@ -225,10 +270,13 @@ export function LandingPage() {
             <article>
               <h3>학교 DB, 통계만 함께</h3>
               <p>
-                여러 학원이 올린 기출에서 유형 비중·서술형 비중·최근 변화 같은 통계만 모읍니다. 원문은 공유하지 않아, 기출이 적은 학교도
-                경향을 볼 수 있습니다.
+                여러 학원이 올린 기출에서 유형 비중·서술형 비중·최근 변화 같은
+                통계만 모읍니다. 원문은 공유하지 않아, 기출이 적은 학교도 경향을
+                볼 수 있습니다.
               </p>
-              <p className="feature-quote">"요약문 빈칸: 기출 4회 모두 출제 · 어구 배열: 최근 3회 연속"</p>
+              <p className="feature-quote">
+                "요약문 빈칸: 기출 4회 모두 출제 · 어구 배열: 최근 3회 연속"
+              </p>
             </article>
           </div>
         </section>
@@ -276,10 +324,13 @@ export function LandingPage() {
         <section className="landing-cta-band">
           <h2>압구정고 1학년 데모로 바로 확인해 보세요</h2>
           <p>
-            기출 3회분, 확정된 출제 프로필, 생성·검수한 문항과 시험지가 들어 있습니다. 데모 계정 <code>demo</code> /{" "}
-            <code>1234</code>
+            기출 3회분, 확정된 출제 프로필, 생성·검수한 문항과 시험지가 들어
+            있습니다. 데모 계정 <code>demo</code> / <code>1234</code>
           </p>
-          <Link className="public-button public-button--large public-button--light" to={DEMO_LOGIN}>
+          <Link
+            className="public-button public-button--large public-button--light"
+            to={DEMO_LOGIN}
+          >
             데모로 둘러보기
           </Link>
         </section>

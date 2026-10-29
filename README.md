@@ -1,4 +1,16 @@
-# React + TypeScript + Vite
+# 프론트엔드 실행 및 API 연결
+
+```sh
+npm install
+npm run dev
+```
+
+- 개발 서버는 `/api` 요청을 `https://testfit.duckdns.org`로 전달합니다. 별도 로컬 백엔드 없이 배포 API를 사용합니다.
+- 배포 빌드도 기본적으로 같은 배포 API를 사용합니다. 백엔드의 `CORS_ALLOWED_ORIGINS`에 실제 프론트 배포 주소가 등록되어 있어야 합니다.
+- 로컬 백엔드 등 다른 API를 쓰려면 `.env.local`에 `VITE_API_BASE_URL=http://localhost:8080`을 설정하고 개발 서버를 다시 실행합니다. 이 값은 개발·빌드 모두에서 기본 주소보다 우선합니다.
+- API 명세: [Swagger UI](https://testfit.duckdns.org/swagger-ui/index.html)
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

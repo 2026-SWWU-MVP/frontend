@@ -8,6 +8,7 @@ import type { WorkspaceOption } from "@/entities/workspace/model/types";
 import { setWorkspaceId } from "@/shared/auth/workspace";
 import { formatDateTime } from "@/shared/lib/date";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import { Select } from "@/shared/ui/Select/Select";
 import "./ReportsPage.css";
 
 function percent(rate: number | null | undefined) {
@@ -71,17 +72,13 @@ export function ReportsPage() {
           {data && data.options.length > 1 && (
             <label className="reports-workspace">
               <span>워크스페이스</span>
-              <select
+              <Select
+                aria-label="워크스페이스"
                 id="reports-workspace"
-                onChange={(event) => selectWorkspace(Number(event.target.value))}
+                onValueChange={(value) => selectWorkspace(Number(value))}
                 value={data.workspaceId}
-              >
-                {data.options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
+                options={data.options.map((option) => ({ value: option.id, label: option.title }))}
+              />
             </label>
           )}
         </div>

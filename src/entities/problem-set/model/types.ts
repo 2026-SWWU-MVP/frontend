@@ -32,7 +32,8 @@ export interface ProblemQuestion {
 
 export interface ProblemSetResponse {
   id: string
-  materialId?: number
+  /** 생성에 쓸 시험범위 자료 (고른 순서). files는 이 자료들의 화면 표시용 */
+  materialIds: number[]
   generationJobId?: number
   worksheetId?: number
   title: string

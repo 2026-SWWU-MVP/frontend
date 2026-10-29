@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { MaterialResponse, PastExamResponse } from "@/entities/problem-set/api/repository";
 import type { ProblemSetResponse } from "@/entities/problem-set/model/types";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { examTypeLabels, pastExamStatusLabels } from "@/entities/problem-set/model/labels";
 import { Link } from "react-router-dom";
 import { workspaceRepository } from "@/entities/workspace/api/repository";
+
+import type { PendingUpload, SourceFile, SourceMode } from "@/pages/problem-set/model/useSourceState";
 
 import { ExistingMaterials, TextMaterialForm } from "./MaterialPicker";
 
@@ -15,8 +18,8 @@ type Props = {
   next: () => void;
   onUpload: (files: File[]) => void;
   uploading: boolean;
-  sourceMode: "material" | "past-exam";
-  onSourceModeChange: (mode: "material" | "past-exam") => void;
+  sourceMode: SourceMode;
+  onSourceModeChange: (mode: SourceMode) => void;
   examYear: number;
   semester: number;
   examType: "MIDTERM" | "FINAL";
@@ -26,13 +29,13 @@ type Props = {
   onAnalyzePastExam: () => void;
   pastExam: PastExamResponse | null;
   analyzingPastExam: boolean;
-  selectedFileName: string | null;
-  uploadFailed: boolean;
+  pastExamFile: SourceFile | null;
+  pendingUpload: PendingUpload | null;
   setInfo: SetInfo;
   onSetInfoChange: (key: keyof SetInfo, value: string) => void;
-  onRemoveFile: (id: string) => void;
+  onRemoveFile: (mode: SourceMode, id: string) => void;
   onTextSubmit: (title: string, text: string) => void;
-  onPickMaterial: (material: MaterialResponse) => void;
+  onToggleMaterial: (material: MaterialResponse) => void;
 };
 
 function Field({
@@ -51,14 +54,13 @@ function Field({
   return (
     <label className="set-field">
       <strong>{label}</strong>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">선택해 주세요</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {labels?.[option] ?? option}
-          </option>
-        ))}
-      </select>
+      <Select
+        aria-label={label}
+        fullWidth
+        value={value}
+        onValueChange={onChange}
+        options={[{ value: "", label: "선택해 주세요" }, ...options.map((option) => ({ value: option, label: labels?.[option] ?? option }))]}
+      />
     </label>
   );
 }
@@ -67,9 +69,11 @@ function Field({
 function Metadata({
   info,
   onChange,
+  sourceMode,
 }: {
   info: SetInfo;
   onChange: (key: keyof SetInfo, value: string) => void;
+  sourceMode: SourceMode;
 }) {
   const [workspaceTitle, setWorkspaceTitle] = useState<string | null>(null);
   useEffect(() => {
@@ -91,7 +95,7 @@ function Metadata({
 
   return (
     <section className="set-card info-card">
-      <h2>문제 세트 정보</h2>
+      <h2>{sourceMode === "past-exam" ? "기출 정보" : "문제 세트 정보"}</h2>
       <div className="set-field">
         <strong>워크스페이스</strong>
         <p className="info-card__value">
@@ -99,14 +103,14 @@ function Metadata({
           <Link to="/workspace">바꾸기</Link>
         </p>
       </div>
-      <Field
+      {sourceMode === "material" && <Field
         label="시험"
         value={info.exam}
         options={["중간고사", "기말고사"]}
         onChange={(value) => onChange("exam", value)}
-      />
+      />}
       <small className="field-help">
-        {info.school && info.exam ? `문제 세트 이름: ${info.school} ${info.exam} 대비` : "시험을 고르면 문제 세트 이름이 만들어집니다."}
+        {sourceMode === "past-exam" ? "연도·학기·시험 유형을 확인한 뒤 기출을 올려 주세요." : info.school && info.exam ? `문제 세트 이름: ${info.school} ${info.exam} 대비` : "시험을 고르면 문제 세트 이름이 만들어집니다."}
       </small>
     </section>
   );
@@ -159,16 +163,18 @@ export function SourceStage({
   onAnalyzePastExam,
   pastExam,
   analyzingPastExam,
-  selectedFileName,
-  uploadFailed,
+  pastExamFile,
+  pendingUpload,
   setInfo,
   onSetInfoChange,
   onRemoveFile,
   onTextSubmit,
-  onPickMaterial,
+  onToggleMaterial,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [materialInput, setMaterialInput] = useState<"pdf" | "text" | "existing">("pdf");
+  // 자료 탭은 고른 시험범위 자료, 기출 탭은 올린 기출만 보여준다
+  const files = sourceMode === "past-exam" ? (pastExamFile ? [pastExamFile] : []) : data.files;
 
   return (
     <>
@@ -177,7 +183,7 @@ export function SourceStage({
           <div className="set-card-heading">
             <h2>자료 입력</h2>
             <span className="accent-badge">
-              {data.files.length}개 자료 선택
+              {files.length}개 자료 선택
             </span>
           </div>
 
@@ -253,7 +259,7 @@ export function SourceStage({
             <TextMaterialForm busy={uploading} onSubmit={onTextSubmit} />
           )}
           {sourceMode === "material" && materialInput === "existing" && (
-            <ExistingMaterials onPick={onPickMaterial} selectedId={data.materialId} />
+            <ExistingMaterials onToggle={onToggleMaterial} selectedIds={data.materialIds} />
           )}
 
           <div className={`upload-box ${sourceMode}`} hidden={sourceMode === "material" && materialInput !== "pdf"}>
@@ -305,29 +311,34 @@ export function SourceStage({
             </div>
           )}
 
-          {data.files.length ? (
-            <Files files={data.files} onRemove={onRemoveFile} />
-          ) : selectedFileName ? (
+          {files.length > 0 && (
+            <Files files={files} onRemove={(id) => onRemoveFile(sourceMode, id)} />
+          )}
+          {pendingUpload && (
             <div className="file-list">
               <div className="set-file">
                 <Icon name="files" size={18} tone="accent" />
-                <strong>{selectedFileName}</strong>
-                <small>{uploadFailed ? "업로드 실패" : "업로드 중..."}</small>
+                <strong>{pendingUpload.name}</strong>
+                <small>{pendingUpload.failed ? "업로드 실패" : "업로드 중..."}</small>
               </div>
             </div>
-          ) : null}
+          )}
 
           <div className="privacy-note">
             업로드 권한이 있는 자료만 업로드해 주세요.
           </div>
         </section>
 
-        <Metadata info={setInfo} onChange={onSetInfoChange} />
+        <Metadata info={setInfo} onChange={onSetInfoChange} sourceMode={sourceMode} />
       </div>
 
       <div className="set-actions">
-        <Button variant="primary" onClick={next}>
-          문제 생성 설정으로 이동
+        <Button
+          variant="primary"
+          onClick={next}
+          disabled={sourceMode === "past-exam" && (pastExam?.status !== "EXTRACTED" || uploading || analyzingPastExam)}
+        >
+          {sourceMode === "past-exam" ? "출제 프로필로 이동" : "문제 생성 설정으로 이동"}
         </Button>
       </div>
     </>

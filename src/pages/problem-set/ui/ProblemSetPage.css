@@ -282,7 +282,7 @@
   gap: 8px;
   font-size: 12px;
 }
-.set-field span {
+.set-field > span {
   position: relative;
   display: flex;
   align-items: center;
@@ -293,12 +293,11 @@
   border-radius: 8px;
   font-weight: 400;
 }
-.set-field span .icon {
+.set-field > span .icon {
   color: var(--color-text-secondary);
 }
 .set-field input,
-.set-field textarea,
-.set-field select {
+.set-field textarea {
   width: 100%;
   border: 1px solid var(--color-border-default);
   border-radius: 8px;
@@ -309,13 +308,10 @@
   font-size: 12px;
   line-height: 1.7;
 }
-.set-field input,
-.set-field select {
+.set-field input {
   height: 44px;
 }
-.set-field select {
-  appearance: auto;
-}
+.set-field .select-control { height: 44px; font-size: 12px; }
 .set-field textarea {
   min-height: 112px;
   resize: vertical;
@@ -329,9 +325,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
-.source-main > .field-grid.three:not(.clean-past-exam-fields) {
-  display: none;
-}
+.source-main > .field-grid { margin: 16px 0; }
 .set-actions {
   display: flex;
   justify-content: flex-end;
@@ -1157,8 +1151,7 @@
   align-items: center;
   gap: 6px;
 }
-.type-setting__options input[type="number"],
-.type-setting__options select {
+.type-setting__options input[type="number"] {
   width: 64px;
   height: 30px;
   padding: 0 6px;

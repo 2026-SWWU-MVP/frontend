@@ -17,6 +17,7 @@ import type { WorkspaceOption } from "@/entities/workspace/model/types";
 import { setWorkspaceId } from "@/shared/auth/workspace";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
+import { Select } from "@/shared/ui/Select/Select";
 import "./SchoolTrendsPage.css";
 
 const confidenceLabels: Record<SchoolTrendResponse["confidence"], string> = {
@@ -90,24 +91,19 @@ export function SchoolTrendsPage() {
       <div className="school-trends-page">
         <div className="school-trends-heading">
           <div>
-            <h1>학교·시험 경향</h1>
+            <h1>학교별 시험 경향</h1>
             <p>모든 학원이 올린 기출에서 뽑은 통계입니다. 다른 학원 기출의 원문은 보이지 않습니다.</p>
           </div>
           {data && data.options.length > 1 && (
             <label className="trend-workspace">
               <span>워크스페이스</span>
-              <select
-                className="trend-select"
+              <Select
+                aria-label="워크스페이스"
                 id="trend-workspace"
-                onChange={(event) => selectWorkspace(Number(event.target.value))}
+                onValueChange={(value) => selectWorkspace(Number(value))}
                 value={data.workspaceId}
-              >
-                {data.options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
+                options={data.options.map((option) => ({ value: option.id, label: option.title }))}
+              />
             </label>
           )}
         </div>

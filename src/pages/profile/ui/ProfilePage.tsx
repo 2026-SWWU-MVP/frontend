@@ -28,6 +28,7 @@ import { getWorkspaceId } from "@/shared/auth/workspace";
 import { Badge } from "@/shared/ui/Badge/Badge";
 import type { BadgeTone } from "@/shared/ui/Badge/Badge";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 
 import "./ProfilePage.css";
@@ -232,20 +233,16 @@ export function ProfilePage() {
             <div className="profile-heading__actions">
               <label className="profile-version">
                 <span>버전</span>
-                <select
+                <Select
+                  aria-label="프로필 버전"
                   disabled={busy !== null}
                   id="profile-version"
-                  onChange={(event) => void selectVersion(Number(event.target.value))}
+                  onValueChange={(value) => void selectVersion(Number(value))}
                   value={profile.id}
-                >
-                  {[...summaries]
+                  options={[...summaries]
                     .sort((a, b) => b.version - a.version)
-                    .map((item) => (
-                      <option key={item.id} value={item.id}>
-                        v{item.version} · {profileStatusLabels[item.status]} · {profileOriginLabels[item.origin]}
-                      </option>
-                    ))}
-                </select>
+                    .map((item) => ({ value: item.id, label: `v${item.version} · ${profileStatusLabels[item.status]} · ${profileOriginLabels[item.origin]}` }))}
+                />
               </label>
               {profile.status === "DRAFT" && (
                 <Button
@@ -288,7 +285,7 @@ export function ProfilePage() {
               >
                 기출로 프로필 만들기
               </Button>
-              <Link className="button button--secondary" to="/problem-sets">
+              <Link className="button button--secondary" to="/problem-sets?source=past-exam">
                 기출 올리러 가기
               </Link>
             </div>
@@ -479,23 +476,20 @@ export function ProfilePage() {
                             <span className={`profile-source profile-source--${rule.source}`}>
                               {ruleSourceLabels[rule.source]}
                             </span>
-                            <select
+                            <Select
+                              aria-label={`규칙 ${index + 1} 분류`}
+                              size="compact"
                               id={`rule-category-${index}`}
-                              onChange={(event) =>
+                              onValueChange={(value) =>
                                 setDraftRules((rules) =>
                                   rules.map((item, i) =>
-                                    i === index ? { ...item, category: event.target.value as RuleCategory } : item,
+                                    i === index ? { ...item, category: value as RuleCategory } : item,
                                   ),
                                 )
                               }
                               value={rule.category}
-                            >
-                              {Object.entries(ruleCategoryLabels).map(([value, label]) => (
-                                <option key={value} value={value}>
-                                  {label}
-                                </option>
-                              ))}
-                            </select>
+                              options={Object.entries(ruleCategoryLabels).map(([value, label]) => ({ value, label }))}
+                            />
                             <label className="profile-check">
                               <input
                                 checked={rule.overridden}

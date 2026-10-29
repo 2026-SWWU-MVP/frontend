@@ -25,6 +25,7 @@ import { resolveWorkspaceId } from "@/entities/workspace/api/repository";
 import { waitForPastExamExtraction } from "@/pages/problem-set/model/workflow";
 import { formatDateTime } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button/Button";
+import { Select } from "@/shared/ui/Select/Select";
 import { PageContainer } from "@/shared/ui/PageContainer/PageContainer";
 
 import "./PastExamsPage.css";
@@ -157,13 +158,14 @@ function QuestionCard({
       {editing ? (
         <div className="extract-edit">
           <label htmlFor={`past-q-type-${id}`}>유형</label>
-          <select id={`past-q-type-${id}`} onChange={(event) => setType(event.target.value)} value={type}>
-            {Object.entries(questionTypeLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <Select
+            id={`past-q-type-${id}`}
+            onValueChange={setType}
+            value={type}
+            size="compact"
+            fullWidth
+            options={Object.entries(questionTypeLabels).map(([value, label]) => ({ value, label }))}
+          />
           <label htmlFor={`past-q-stem-${id}`}>발문</label>
           <textarea id={`past-q-stem-${id}`} onChange={(event) => setStem(event.target.value)} rows={2} value={stem} />
           <label htmlFor={`past-q-body-${id}`}>본문</label>
@@ -339,7 +341,7 @@ export function PastExamsPage() {
             <p>AI가 기출 PDF에서 뽑아낸 지문·문항을 확인하고 고칩니다. 점검에서 이슈가 나온 곳을 원본과 비교해 주세요.</p>
           </div>
           <div className="past-exams-heading__actions">
-            <Link className="button button--secondary" to="/problem-sets">
+            <Link className="button button--secondary" to="/problem-sets?source=past-exam">
               기출 올리기
             </Link>
             <Link className="button button--primary" to="/profile">
@@ -360,7 +362,7 @@ export function PastExamsPage() {
             {exams === null && <p className="extract-muted">불러오는 중입니다.</p>}
             {exams?.length === 0 && (
               <p className="extract-muted">
-                아직 올린 기출이 없습니다. <Link to="/problem-sets">문제 세트 › 기출 업로드</Link>에서 올려 주세요.
+                아직 올린 기출이 없습니다. <Link to="/problem-sets?source=past-exam">문제 세트 › 기출 업로드</Link>에서 올려 주세요.
               </p>
             )}
             <ul>

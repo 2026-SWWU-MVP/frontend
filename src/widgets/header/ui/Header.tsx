@@ -15,7 +15,7 @@ export function Header({ menuOpen = false, onMenuClick }: { menuOpen?: boolean; 
     "/members": "팀원 및 권한",
     "/workspace": "워크스페이스",
     "/problem-sets": "문제 세트",
-    "/school-trends": "학교·시험 경향",
+    "/school-trends": "학교별 시험 경향",
     "/reports": "데이터 리포트",
     "/profile": "출제 프로필",
     "/past-exams": "기출",

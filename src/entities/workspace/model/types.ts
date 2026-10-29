@@ -12,6 +12,7 @@ export interface PreparationBanner {
   title: string;
   description: string;
   actionLabel: string;
+  actionPath: string;
 }
 
 export interface RecentQuestionSet {

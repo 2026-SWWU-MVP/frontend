@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createGenerationJob,
   getGeneratedProblems,
@@ -41,6 +41,7 @@ import type { GenerationSelection } from "@/pages/problem-set/ui/GenerationStage
 import { ReviewStage } from "@/pages/problem-set/ui/ReviewStage";
 import { OutputStage } from "@/pages/problem-set/ui/OutputStage";
 import { useSourceState } from "@/pages/problem-set/model/useSourceState";
+import type { SourceMode } from "@/pages/problem-set/model/useSourceState";
 import { useGenerationState } from "@/pages/problem-set/model/useGenerationState";
 import { useReviewState } from "@/pages/problem-set/model/useReviewState";
 import {
@@ -61,6 +62,7 @@ const emptyProblemSet: ProblemSetResponse = {
   title: "",
   description: "",
   questions: [],
+  materialIds: [],
   files: [],
   school: "",
   grade: "",
@@ -120,6 +122,16 @@ function Header({
 }
 export function ProblemSetPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sourceMode = searchParams.get("source") === "past-exam" ? "past-exam" : "material";
+  function setSourceMode(mode: SourceMode) {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (mode === "past-exam") next.set("source", mode);
+      else next.delete("source");
+      return next;
+    }, { replace: true });
+  }
   const userId = getAuthSession()?.userId ?? null;
   // 학원 정보가 바뀌면(로고 등) 다시 그린다
   useAcademyState(userId);
@@ -136,8 +148,6 @@ export function ProblemSetPage() {
   const {
     uploading,
     setUploading,
-    sourceMode,
-    setSourceMode,
     examYear,
     setExamYear,
     semester,
@@ -148,10 +158,10 @@ export function ProblemSetPage() {
     setPastExam,
     analyzingPastExam,
     setAnalyzingPastExam,
-    selectedFileName,
-    setSelectedFileName,
-    uploadFailed,
-    setUploadFailed,
+    pastExamFile,
+    setPastExamFile,
+    pendingUpload,
+    setPendingUpload,
   } = useSourceState();
   const { generating, setGenerating, progress, setProgress } =
     useGenerationState();
@@ -211,65 +221,84 @@ export function ProblemSetPage() {
   const regenerateCurrentQuestion = () =>
     reviewCurrentQuestion("regenerate", (id) => regenerateReviewedProblem(id), "문항 재생성에 실패했습니다.");
 
-  const uploadSingle = async (file: File) => {
+  const isPdf = (file: File) =>
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+  // 시험범위 자료를 선택 목록에 더한다 (이미 있으면 표시 정보만 갱신)
+  const addMaterial = (material: MaterialResponse, fallbackName: string) => {
+    const file = {
+      id: String(material.id),
+      name: material.title || material.originalFilename || fallbackName,
+      meta: `${material.sourceType === "TEXT" ? "텍스트" : "PDF"}${
+        material.passageCount ? ` · 지문 ${material.passageCount}개` : material.pageCount ? ` · ${material.pageCount}쪽` : ""
+      }`,
+    };
+    setData((current) => ({
+      ...current,
+      materialIds: current.materialIds.includes(material.id)
+        ? current.materialIds
+        : [...current.materialIds, material.id],
+      files: current.files.some((item) => item.id === file.id)
+        ? current.files.map((item) => (item.id === file.id ? file : item))
+        : [...current.files, file],
+    }));
+  };
+
+  const removeMaterial = (materialId: number) => {
+    setData((current) => ({
+      ...current,
+      materialIds: current.materialIds.filter((id) => id !== materialId),
+      files: current.files.filter((file) => file.id !== String(materialId)),
+    }));
+  };
+
+  // 여러 파일은 하나씩 올리고, 실패한 파일만 따로 알린다 (성공한 자료는 선택에 남는다)
+  const upload = async (files: File[]) => {
+    if (uploading) return;
     setError(null);
-    setSelectedFileName(file.name);
-    setUploadFailed(false);
     setUploading(true);
+    const failures: string[] = [];
+    const failedNames: string[] = [];
     try {
       const workspaceId = await resolveWorkspaceId();
-      if (
-        file.type !== "application/pdf" &&
-        !file.name.toLowerCase().endsWith(".pdf")
-      ) {
-        throw new Error("PDF 파일만 업로드할 수 있습니다.");
+      for (const file of files) {
+        setPendingUpload({ mode: "material", name: file.name, failed: false });
+        try {
+          if (!isPdf(file)) throw new Error("PDF 파일만 업로드할 수 있습니다.");
+          addMaterial(await uploadMaterialWorkflow(workspaceId, file), file.name);
+        } catch (cause) {
+          failedNames.push(file.name);
+          failures.push(`${file.name}: ${cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다."}`);
+        }
       }
-      const material = await uploadMaterialWorkflow(workspaceId, file);
-      setData((current) => ({
-        ...current,
-        id: String(material.id),
-        materialId: material.id,
-        files: [
-          ...current.files.filter((item) => item.id !== String(material.id)),
-          {
-            id: String(material.id),
-            name: material.originalFilename ?? file.name,
-            meta: `${material.status}${material.pageCount ? ` · ${material.pageCount}쪽` : ""}`,
-          },
-        ],
-      }));
     } catch (cause) {
-      setUploadFailed(true);
-      setError(
-        cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다.",
-      );
+      failures.push(cause instanceof Error ? cause.message : "파일 업로드에 실패했습니다.");
     } finally {
       setUploading(false);
     }
-  };
-
-  const upload = async (files: File[]) => {
-    await Promise.all(files.map((file) => uploadSingle(file)));
+    if (failures.length) {
+      setPendingUpload({ mode: "material", name: failedNames.join(", ") || files.map((file) => file.name).join(", "), failed: true });
+      setError(failures.join(" / "));
+    } else {
+      setPendingUpload(null);
+    }
   };
 
   const uploadPastExamFile = async (file: File) => {
+    if (uploading) return;
     setError(null);
-    setSelectedFileName(file.name);
-    setUploadFailed(false);
+    setPendingUpload({ mode: "past-exam", name: file.name, failed: false });
     setUploading(true);
     try {
       const workspaceId = await resolveWorkspaceId();
-      setPastExam(null);
-      setData((current) => ({ ...current, materialId: undefined, files: [] }));
-      if (
-        file.type !== "application/pdf" &&
-        !file.name.toLowerCase().endsWith(".pdf")
-      ) {
+      if (!isPdf(file)) {
         throw new Error("기출은 PDF 파일만 업로드할 수 있습니다.");
       }
       if (file.size > 30 * 1024 * 1024) {
         throw new Error("PDF 파일은 최대 30MB까지 업로드할 수 있습니다.");
       }
+      setPastExam(null);
+      setPastExamFile(null);
       const uploaded = await uploadPastExamWorkflow(
         workspaceId,
         file,
@@ -278,19 +307,14 @@ export function ProblemSetPage() {
         examType,
       );
       setPastExam(uploaded);
-      setData((current) => ({
-        ...current,
+      setPastExamFile({
         id: String(uploaded.id),
-        files: [
-          {
-            id: String(uploaded.id),
-            name: uploaded.originalFilename ?? file.name,
-            meta: uploaded.status,
-          },
-        ],
-      }));
+        name: uploaded.originalFilename ?? file.name,
+        meta: uploaded.status,
+      });
+      setPendingUpload(null);
     } catch (cause) {
-      setUploadFailed(true);
+      setPendingUpload({ mode: "past-exam", name: file.name, failed: true });
       setError(
         cause instanceof Error ? cause.message : "기출 업로드에 실패했습니다.",
       );
@@ -299,18 +323,15 @@ export function ProblemSetPage() {
     }
   };
 
-  const removeFile = (fileId: string) => {
-    setData((current) => ({
-      ...current,
-      files: current.files.filter((file) => file.id !== fileId),
-      ...(current.materialId !== undefined &&
-      String(current.materialId) === fileId
-        ? { materialId: undefined }
-        : {}),
-    }));
-    if (pastExam && String(pastExam.id) === fileId) setPastExam(null);
-    setSelectedFileName(null);
-    setUploadFailed(false);
+  // 기출과 시험범위 자료는 따로 관리한다 (한쪽을 지워도 다른 쪽은 그대로)
+  const removeFile = (mode: SourceMode, fileId: string) => {
+    if (mode === "past-exam") {
+      setPastExam(null);
+      setPastExamFile(null);
+    } else {
+      removeMaterial(Number(fileId));
+    }
+    setPendingUpload((current) => (current?.mode === mode ? null : current));
   };
 
   const analyzePastExamFlow = async () => {
@@ -336,11 +357,12 @@ export function ProblemSetPage() {
       setData((current) => ({
         ...current,
         passage: extraction.passages[0]?.text ?? "",
-        files: current.files.map((file) => ({
-          ...file,
-          meta: `${completed.status} · ${extraction.issueCount}개 이슈`,
-        })),
       }));
+      setPastExamFile((current) =>
+        current && current.id === String(completed.id)
+          ? { ...current, meta: `${completed.status} · ${extraction.issueCount}개 이슈` }
+          : current,
+      );
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "기출 분석에 실패했습니다.",
@@ -394,21 +416,11 @@ export function ProblemSetPage() {
     }
   };
 
-  // 자료를 고르면(PDF·텍스트·기존 자료) 이 자료로 생성한다
-  const selectMaterial = (material: MaterialResponse, fallbackName: string) => {
+  // 올린 자료에서 고르기: 누를 때마다 선택·해제한다
+  const toggleMaterial = (material: MaterialResponse) => {
     setError(null);
-    setData((current) => ({
-      ...current,
-      id: String(material.id),
-      materialId: material.id,
-      files: [
-        {
-          id: String(material.id),
-          name: material.title || material.originalFilename || fallbackName,
-          meta: `${material.sourceType === "TEXT" ? "텍스트" : "PDF"} · 지문 ${material.passageCount ?? 0}개`,
-        },
-      ],
-    }));
+    if (data.materialIds.includes(material.id)) removeMaterial(material.id);
+    else addMaterial(material, `자료 ${material.id}`);
   };
 
   const uploadText = async (title: string, text: string) => {
@@ -416,7 +428,7 @@ export function ProblemSetPage() {
     setUploading(true);
     try {
       const workspaceId = await resolveWorkspaceId();
-      selectMaterial(await uploadMaterialText(workspaceId, title, text), title);
+      addMaterial(await uploadMaterialText(workspaceId, title, text), title);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "텍스트 자료를 등록하지 못했습니다.");
     } finally {
@@ -456,7 +468,7 @@ export function ProblemSetPage() {
             }
             next={() => {
               if (sourceMode === "material") {
-                if (!data.materialId) {
+                if (data.materialIds.length === 0) {
                   setError("자료를 먼저 업로드해 주세요.");
                   return;
                 }
@@ -486,13 +498,13 @@ export function ProblemSetPage() {
             onAnalyzePastExam={analyzePastExamFlow}
             pastExam={pastExam}
             analyzingPastExam={analyzingPastExam}
-            selectedFileName={selectedFileName}
-            uploadFailed={uploadFailed}
+            pastExamFile={pastExamFile}
+            pendingUpload={pendingUpload?.mode === sourceMode ? pendingUpload : null}
             setInfo={setInfo}
             onSetInfoChange={updateSetInfo}
             onRemoveFile={removeFile}
             onTextSubmit={(title, text) => void uploadText(title, text)}
-            onPickMaterial={(material) => selectMaterial(material, `자료 ${material.id}`)}
+            onToggleMaterial={toggleMaterial}
           />
         )}
         {stage === "generation" && (
