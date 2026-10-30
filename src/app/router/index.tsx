@@ -12,6 +12,7 @@ import { AcademyPage } from "@/pages/academy/ui/AcademyPage";
 import { MembersPage } from "@/pages/members/ui/MembersPage";
 import { ProfilePage } from "@/pages/profile/ui/ProfilePage";
 import { PastExamsPage } from "@/pages/past-exams/ui/PastExamsPage";
+import { SettingsPage } from "@/pages/settings/ui/SettingsPage";
 import { RequireAuth } from '@/app/router/RequireAuth'
 
 export const router = createBrowserRouter([
@@ -45,7 +46,7 @@ export const router = createBrowserRouter([
           { path: "/school-trends", element: <SchoolTrendsPage /> },
           { path: "/reports", element: <ReportsPage /> },
           { path: "/members", element: <MembersPage /> },
-          { path: "/settings", element: <PlaceholderPage /> },
+          { path: "/settings", element: <SettingsPage /> },
           { path: "*", element: <PlaceholderPage /> },
         ],
       },
