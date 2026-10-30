@@ -94,7 +94,10 @@
 .answer-card,
 .evidence-side,
 .pdf-card,
-.branding-card {
+.branding-card,
+.worksheet-picker,
+.worksheet-settings,
+.worksheet-list {
   padding: 24px;
 }
 .set-card-heading {
